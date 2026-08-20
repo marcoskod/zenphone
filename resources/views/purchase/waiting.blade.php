@@ -14,7 +14,18 @@
             <div class="flex flex-col items-center gap-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:justify-between">
                 <div>
                     <p class="text-sm text-secondary/60 dark:text-light/60">Commande #{{ $order->id }}</p>
-                    <p class="mt-2 text-2xl font-bold text-secondary dark:text-light">{{ $order->phone }}</p>
+                    <div class="mt-2 flex items-center gap-2">
+                        <p class="text-2xl font-bold text-secondary dark:text-light">{{ $order->phone }}</p>
+                        <button
+                            type="button"
+                            @click="copyPhone('{{ $order->phone }}')"
+                            aria-label="Copier le numéro"
+                            class="flex h-8 w-8 items-center justify-center rounded-lg text-secondary/60 transition hover:bg-slate-100 hover:text-primary dark:text-light/60 dark:hover:bg-slate-800"
+                        >
+                            <i class="fa-solid fa-check text-success" x-show="copiedPhone" x-cloak></i>
+                            <i class="fa-solid fa-copy" x-show="!copiedPhone"></i>
+                        </button>
+                    </div>
                     <p class="mt-1 text-sm text-secondary/70 dark:text-light/70">
                         Service : <span class="capitalize">{{ $order->service }}</span>
                         — Pays : <span class="capitalize">{{ str_replace('_', ' ', $order->country) }}</span>

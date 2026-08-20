@@ -166,6 +166,15 @@ Alpine.data('orderWaiting', (expiresAtIso) => ({
     totalSeconds: 0,
     secondsRemaining: 0,
     countdownInterval: null,
+    copiedPhone: false,
+
+    copyPhone(phone) {
+        navigator.clipboard.writeText(phone);
+        this.copiedPhone = true;
+        setTimeout(() => {
+            this.copiedPhone = false;
+        }, 2000);
+    },
 
     get expired() {
         return this.secondsRemaining <= 0;
