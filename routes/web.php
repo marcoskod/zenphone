@@ -3,9 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::view('/', 'landing')->name('home');
 
 // TODO(action_09): replace with a real PricingController-backed page.
 Route::view('/tarifs', 'pages.coming-soon', [
