@@ -161,6 +161,49 @@ Alpine.data('purchaseForm', (initialService = '', initialCountry = '') => ({
     },
 }));
 
+Alpine.data('orderWaiting', (expiresAtIso) => ({
+    expiresAtTimestamp: expiresAtIso ? new Date(expiresAtIso).getTime() : Date.now(),
+    totalSeconds: 0,
+    secondsRemaining: 0,
+    countdownInterval: null,
+
+    get expired() {
+        return this.secondsRemaining <= 0;
+    },
+
+    get minutes() {
+        return Math.floor(this.secondsRemaining / 60);
+    },
+
+    get seconds() {
+        return String(this.secondsRemaining % 60).padStart(2, '0');
+    },
+
+    get progressPercent() {
+        if (this.totalSeconds <= 0) {
+            return 0;
+        }
+
+        return Math.max(0, Math.min(100, (this.secondsRemaining / this.totalSeconds) * 100));
+    },
+
+    tickCountdown() {
+        const remainingMs = this.expiresAtTimestamp - Date.now();
+        this.secondsRemaining = Math.max(0, Math.round(remainingMs / 1000));
+
+        if (this.secondsRemaining <= 0) {
+            clearInterval(this.countdownInterval);
+        }
+    },
+
+    init() {
+        this.secondsRemaining = Math.max(0, Math.round((this.expiresAtTimestamp - Date.now()) / 1000));
+        this.totalSeconds = this.secondsRemaining;
+
+        this.countdownInterval = setInterval(() => this.tickCountdown(), 1000);
+    },
+}));
+
 Alpine.start();
 
 // Font Awesome (all.min.css) is loaded via CDN in the main layout's <head>, added in a

@@ -19,6 +19,7 @@ class Order extends Model
         'price_fcfa',
         'status',
         'sms_code',
+        'expires_at',
     ];
 
     protected function casts(): array
@@ -26,6 +27,7 @@ class Order extends Model
         return [
             'fivesim_order_id' => 'integer',
             'price_fcfa' => 'decimal:2',
+            'expires_at' => 'datetime',
         ];
     }
 

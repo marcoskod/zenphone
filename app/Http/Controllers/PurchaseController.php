@@ -8,6 +8,7 @@ use App\Services\FiveSim\Contracts\FiveSimServiceInterface;
 use App\Services\PricingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -77,6 +78,7 @@ class PurchaseController extends Controller
                     'price_fcfa' => $priceFcfa,
                     'status' => strtolower($activation['status'] ?? 'pending'),
                     'sms_code' => null,
+                    'expires_at' => $this->parseExpiresAt($activation),
                 ]);
 
                 $user->decrement('balance', $priceFcfa);
@@ -90,14 +92,28 @@ class PurchaseController extends Controller
         return redirect()->route('purchase.waiting', $order);
     }
 
-    /**
-     * Minimal placeholder: shows the purchased number and current status with no
-     * countdown or SMS polling yet - action_06 builds the real waiting/receiving screen.
-     */
     public function waiting(Order $order): View
     {
         abort_unless($order->user_id === auth()->id(), 403);
 
         return view('purchase.waiting', ['order' => $order]);
+    }
+
+    /**
+     * 5sim's buyActivation() response includes an "expires" timestamp; fall back to a
+     * 15-minute window (within 5sim's documented 5-20 minute activation range) if it's
+     * missing or unparseable, rather than leaving the countdown undefined.
+     */
+    private function parseExpiresAt(array $activation): Carbon
+    {
+        if (isset($activation['expires'])) {
+            try {
+                return Carbon::parse($activation['expires']);
+            } catch (\Throwable) {
+                // fall through to the default below
+            }
+        }
+
+        return now()->addMinutes(15);
     }
 }
