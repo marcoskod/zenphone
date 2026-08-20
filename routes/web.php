@@ -7,6 +7,13 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// TODO(action_09): replace with a real PricingController-backed page.
+Route::view('/tarifs', 'pages.coming-soon', [
+    'title' => 'Nos tarifs',
+    'message' => 'La grille de tarifs complète par service et par pays arrive très prochainement.',
+    'icon' => 'fa-tags',
+])->name('pricing');
+
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
