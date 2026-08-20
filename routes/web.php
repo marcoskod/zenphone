@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -76,6 +77,10 @@ Route::middleware('auth')->group(function () {
         'message' => "L'historique complet de vos numéros et recharges arrive très prochainement.",
         'icon' => 'fa-clock-rotate-left',
     ])->name('history');
+
+    Route::prefix('api')->name('api.')->group(function () {
+        Route::get('/services', [CatalogController::class, 'services'])->name('services');
+    });
 });
 
 require __DIR__.'/auth.php';
