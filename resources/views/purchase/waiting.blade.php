@@ -7,7 +7,12 @@
 
     <div
         class="py-12"
-        x-data="orderWaiting('{{ $order->expires_at?->toIso8601String() }}')"
+        x-data="orderWaiting(
+            {{ $order->id }},
+            '{{ $order->expires_at?->toIso8601String() }}',
+            '{{ $order->status }}',
+            @js($order->sms_code)
+        )"
         x-init="init()"
     >
         <div class="mx-auto max-w-2xl space-y-6 px-4 sm:px-6 lg:px-8">
@@ -33,6 +38,30 @@
                 </div>
 
                 <x-purchase.countdown-timer />
+            </div>
+
+            <div x-show="!smsCode" x-cloak class="flex items-center justify-center gap-2 text-sm text-secondary/60 dark:text-light/60">
+                <i class="fa-solid fa-circle-notch fa-spin"></i>
+                En attente du SMS...
+            </div>
+
+            <div x-show="smsCode" x-cloak x-transition class="rounded-2xl border border-success/30 bg-success/5 p-6 text-center">
+                <p class="text-sm font-medium text-success">
+                    <i class="fa-solid fa-circle-check"></i>
+                    SMS reçu !
+                </p>
+                <div class="mt-2 flex items-center justify-center gap-2">
+                    <p class="text-3xl font-bold tracking-widest text-secondary dark:text-light" x-text="smsCode"></p>
+                    <button
+                        type="button"
+                        @click="copySms()"
+                        aria-label="Copier le code"
+                        class="flex h-9 w-9 items-center justify-center rounded-lg text-secondary/60 transition hover:bg-white hover:text-primary dark:text-light/60 dark:hover:bg-slate-800"
+                    >
+                        <i class="fa-solid fa-check text-success" x-show="copiedSms" x-cloak></i>
+                        <i class="fa-solid fa-copy" x-show="!copiedSms"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>

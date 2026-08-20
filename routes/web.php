@@ -67,7 +67,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/acheter', [PurchaseController::class, 'index'])->name('purchase');
     Route::post('/acheter', [PurchaseController::class, 'store'])->name('purchase.store');
 
-    // TODO(action_06): replace with the real countdown/SMS-polling waiting screen.
     Route::get('/commande/{order}/attente', [PurchaseController::class, 'waiting'])
         ->name('purchase.waiting');
 
@@ -82,6 +81,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/services', [CatalogController::class, 'services'])->name('services');
         Route::get('/countries', [CatalogController::class, 'countries'])->name('countries');
         Route::get('/price', [CatalogController::class, 'price'])->name('price');
+        Route::get('/orders/{order}/status', [PurchaseController::class, 'status'])->name('orders.status');
     });
 });
 

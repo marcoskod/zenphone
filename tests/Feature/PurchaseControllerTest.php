@@ -152,4 +152,83 @@ class PurchaseControllerTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    public function test_status_endpoint_syncs_the_order_status_and_sms_code_from_5sim(): void
+    {
+        Http::fake([
+            '*/user/check/*' => Http::response([
+                'id' => 123456,
+                'status' => 'RECEIVED',
+                'phone' => '+79001234567',
+                'sms' => [
+                    ['sender' => 'WhatsApp', 'text' => 'Your code: 654321', 'code' => '654321'],
+                ],
+            ], 200),
+        ]);
+
+        $user = User::factory()->create();
+        $order = Order::factory()->for($user)->create([
+            'fivesim_order_id' => 123456,
+            'status' => 'pending',
+            'sms_code' => null,
+        ]);
+
+        $response = $this->actingAs($user)->getJson(route('api.orders.status', $order));
+
+        $response->assertStatus(200);
+        $response->assertJson(['status' => 'received', 'sms_code' => '654321']);
+
+        $order->refresh();
+        $this->assertSame('received', $order->status);
+        $this->assertSame('654321', $order->sms_code);
+    }
+
+    public function test_status_endpoint_does_not_clobber_an_already_received_sms_code(): void
+    {
+        Http::fake([
+            '*/user/check/*' => Http::response([
+                'id' => 123456,
+                'status' => 'RECEIVED',
+                'sms' => [],
+            ], 200),
+        ]);
+
+        $user = User::factory()->create();
+        $order = Order::factory()->for($user)->create([
+            'fivesim_order_id' => 123456,
+            'status' => 'received',
+            'sms_code' => '111111',
+        ]);
+
+        $this->actingAs($user)->getJson(route('api.orders.status', $order));
+
+        $this->assertSame('111111', $order->refresh()->sms_code);
+    }
+
+    public function test_status_endpoint_is_forbidden_for_another_users_order(): void
+    {
+        $owner = User::factory()->create();
+        $order = Order::factory()->for($owner)->create(['fivesim_order_id' => 123456]);
+
+        $intruder = User::factory()->create();
+
+        $response = $this->actingAs($intruder)->getJson(route('api.orders.status', $order));
+
+        $response->assertStatus(403);
+    }
+
+    public function test_status_endpoint_returns_502_when_5sim_errors(): void
+    {
+        Http::fake([
+            '*/user/check/*' => Http::response('order not found', 404),
+        ]);
+
+        $user = User::factory()->create();
+        $order = Order::factory()->for($user)->create(['fivesim_order_id' => 123456, 'status' => 'pending']);
+
+        $response = $this->actingAs($user)->getJson(route('api.orders.status', $order));
+
+        $response->assertStatus(502);
+        $this->assertSame('pending', $order->refresh()->status);
+    }
 }

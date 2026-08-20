@@ -6,6 +6,7 @@ use App\Exceptions\FiveSimException;
 use App\Models\Order;
 use App\Services\FiveSim\Contracts\FiveSimServiceInterface;
 use App\Services\PricingService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -97,6 +98,46 @@ class PurchaseController extends Controller
         abort_unless($order->user_id === auth()->id(), 403);
 
         return view('purchase.waiting', ['order' => $order]);
+    }
+
+    /**
+     * GET /api/orders/{order}/status - polled by the waiting screen every 5 seconds.
+     * This is where the Order row's status/sms_code finally get synced from 5sim (a
+     * known gap since action_11, since no controller called checkOrder() until now).
+     */
+    public function status(Order $order): JsonResponse
+    {
+        abort_unless($order->user_id === auth()->id(), 403);
+
+        try {
+            $result = $this->fiveSim->checkOrder($order->fivesim_order_id);
+        } catch (FiveSimException $e) {
+            return response()->json(['message' => $e->getMessage()], 502);
+        }
+
+        $smsCode = $this->extractSmsCode($result);
+
+        $order->update([
+            'status' => strtolower($result['status'] ?? $order->status),
+            // Never clobber an already-received code with a blank result from a later poll.
+            'sms_code' => $smsCode ?? $order->sms_code,
+        ]);
+
+        return response()->json([
+            'status' => $order->status,
+            'sms_code' => $order->sms_code,
+        ]);
+    }
+
+    private function extractSmsCode(array $result): ?string
+    {
+        if (empty($result['sms']) || ! is_array($result['sms'])) {
+            return null;
+        }
+
+        $lastSms = end($result['sms']);
+
+        return is_array($lastSms) ? ($lastSms['code'] ?? null) : null;
     }
 
     /**

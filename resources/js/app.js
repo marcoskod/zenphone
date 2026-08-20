@@ -161,18 +161,36 @@ Alpine.data('purchaseForm', (initialService = '', initialCountry = '') => ({
     },
 }));
 
-Alpine.data('orderWaiting', (expiresAtIso) => ({
+Alpine.data('orderWaiting', (orderId, expiresAtIso, initialStatus = 'pending', initialSmsCode = null) => ({
+    orderId,
+    status: initialStatus,
+    smsCode: initialSmsCode,
     expiresAtTimestamp: expiresAtIso ? new Date(expiresAtIso).getTime() : Date.now(),
     totalSeconds: 0,
     secondsRemaining: 0,
     countdownInterval: null,
+    pollInterval: null,
     copiedPhone: false,
+    copiedSms: false,
+    timedOut: false,
 
     copyPhone(phone) {
         navigator.clipboard.writeText(phone);
         this.copiedPhone = true;
         setTimeout(() => {
             this.copiedPhone = false;
+        }, 2000);
+    },
+
+    copySms() {
+        if (!this.smsCode) {
+            return;
+        }
+
+        navigator.clipboard.writeText(this.smsCode);
+        this.copiedSms = true;
+        setTimeout(() => {
+            this.copiedSms = false;
         }, 2000);
     },
 
@@ -202,6 +220,37 @@ Alpine.data('orderWaiting', (expiresAtIso) => ({
 
         if (this.secondsRemaining <= 0) {
             clearInterval(this.countdownInterval);
+
+            // Reaching zero with no SMS received: stop polling and show the timeout state.
+            if (!this.smsCode) {
+                this.timedOut = true;
+                clearInterval(this.pollInterval);
+            }
+        }
+    },
+
+    async pollStatus() {
+        if (this.smsCode || this.expired) {
+            clearInterval(this.pollInterval);
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/orders/${this.orderId}/status`);
+
+            if (!response.ok) {
+                return;
+            }
+
+            const json = await response.json();
+            this.status = json.status;
+
+            if (json.sms_code) {
+                this.smsCode = json.sms_code;
+                clearInterval(this.pollInterval);
+            }
+        } catch {
+            // Transient network hiccup: leave the interval running for the next attempt.
         }
     },
 
@@ -210,6 +259,11 @@ Alpine.data('orderWaiting', (expiresAtIso) => ({
         this.totalSeconds = this.secondsRemaining;
 
         this.countdownInterval = setInterval(() => this.tickCountdown(), 1000);
+
+        if (!this.smsCode && !this.expired) {
+            this.pollStatus();
+            this.pollInterval = setInterval(() => this.pollStatus(), 5000);
+        }
     },
 }));
 
