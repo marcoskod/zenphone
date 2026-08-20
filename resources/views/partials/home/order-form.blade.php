@@ -1,0 +1,151 @@
+{{-- Country selector --}}
+<div>
+    <label class="mb-1.5 block text-xs font-semibold text-secondary dark:text-light">Pays</label>
+    <div class="relative">
+        <button
+            type="button"
+            @click="showCountryDropdown = !showCountryDropdown"
+            class="flex w-full items-center justify-between rounded-lg border-2 border-slate-200 px-3.5 py-2.5 text-left text-sm text-secondary transition focus:border-primary dark:border-slate-700 dark:text-light"
+        >
+            <span class="flex items-center gap-2">
+                <span x-show="country" x-text="countryFlag(country)"></span>
+                <span x-text="selectedCountryLabel"></span>
+            </span>
+            <i class="fa-solid fa-chevron-down text-xs text-secondary/40 transition" :class="{ 'rotate-180': showCountryDropdown }"></i>
+        </button>
+
+        <div
+            x-show="showCountryDropdown"
+            x-cloak
+            x-transition
+            @click.outside="showCountryDropdown = false"
+            class="absolute z-30 mt-1.5 w-full overflow-hidden rounded-lg border-2 border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-800"
+        >
+            <div class="border-b border-slate-100 p-2 dark:border-slate-700">
+                <div class="flex items-center gap-2 rounded-md bg-slate-50 px-2.5 py-1.5 dark:bg-slate-900">
+                    <i class="fa-solid fa-magnifying-glass text-xs text-secondary/40"></i>
+                    <input
+                        type="text"
+                        x-model="countryFilter"
+                        placeholder="Rechercher un pays..."
+                        class="w-full border-none bg-transparent p-0 text-sm text-secondary focus:ring-0 dark:text-light"
+                    >
+                </div>
+            </div>
+            <div class="max-h-56 overflow-y-auto">
+                <template x-for="item in filteredCountries" :key="item.code">
+                    <button
+                        type="button"
+                        @click="selectCountry(item.code)"
+                        class="flex w-full items-center gap-3 px-3.5 py-2 text-left text-sm transition hover:bg-slate-50 dark:hover:bg-slate-700"
+                        :class="country === item.code ? 'bg-primary/10 text-primary' : 'text-secondary dark:text-light'"
+                    >
+                        <span x-text="countryFlag(item.code)"></span>
+                        <span x-text="item.name"></span>
+                    </button>
+                </template>
+                <p class="px-3.5 py-3 text-sm text-secondary/50" x-show="filteredCountries.length === 0">Aucun pays trouvé.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Service selector --}}
+<div x-show="country" x-cloak>
+    <label class="mb-1.5 block text-xs font-semibold text-secondary dark:text-light">Service</label>
+    <div class="relative mb-2">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs text-secondary/40"></i>
+        <input
+            type="text"
+            x-model="serviceFilter"
+            placeholder="Rechercher un service..."
+            class="w-full rounded-lg border-2 border-slate-200 py-2.5 pl-9 text-sm text-secondary focus:border-primary dark:border-slate-700 dark:bg-slate-800 dark:text-light"
+        >
+    </div>
+    <div class="grid grid-cols-3 gap-2">
+        <template x-for="item in filteredServices" :key="item.code">
+            <button
+                type="button"
+                @click="selectService(item.code)"
+                class="flex flex-col items-center gap-1 rounded-lg border-2 p-2.5 text-center transition"
+                :class="service === item.code ? 'border-primary bg-primary/10 text-primary' : 'border-slate-200 text-secondary hover:border-primary/40 dark:border-slate-700 dark:text-light'"
+            >
+                <i :class="serviceIcon(item.code)" class="text-lg"></i>
+                <span class="truncate text-[11px] capitalize" x-text="item.label"></span>
+            </button>
+        </template>
+    </div>
+    <p class="mt-3 text-center text-sm text-secondary/50" x-show="filteredServices.length === 0" x-cloak>Aucun service trouvé.</p>
+</div>
+
+{{-- Order summary --}}
+<div x-show="service && country" x-cloak class="rounded-lg border border-slate-200 bg-light p-3.5 dark:border-slate-700 dark:bg-secondary/40">
+    <div class="flex items-center justify-between text-sm">
+        <span class="text-secondary/70 dark:text-light/70">Service</span>
+        <span class="font-medium capitalize text-secondary dark:text-light" x-text="selectedServiceLabel"></span>
+    </div>
+    <div class="mt-1 flex items-center justify-between text-sm">
+        <span class="text-secondary/70 dark:text-light/70">Pays</span>
+        <span class="font-medium text-secondary dark:text-light" x-text="selectedCountryLabel"></span>
+    </div>
+    <div class="mt-2 flex items-center justify-between border-t border-slate-200 pt-2 dark:border-slate-700">
+        <span class="text-sm font-semibold text-secondary dark:text-light">Total</span>
+        <span class="text-xl font-bold text-accent" x-text="priceLabel"></span>
+    </div>
+</div>
+
+{{-- Inline auth (guests only) --}}
+<div x-show="authChecked && !authenticated" x-cloak class="space-y-3 rounded-lg border border-slate-200 p-3.5 dark:border-slate-700">
+    <p class="text-xs font-semibold text-secondary dark:text-light">Votre compte</p>
+    <div>
+        <input
+            type="email"
+            x-model="authEmail"
+            placeholder="Adresse email"
+            autocomplete="email"
+            class="w-full rounded-lg border-2 border-slate-200 px-3.5 py-2.5 text-sm text-secondary focus:border-primary dark:border-slate-700 dark:bg-slate-800 dark:text-light"
+        >
+    </div>
+    <div>
+        <input
+            type="password"
+            x-model="authPassword"
+            placeholder="Mot de passe"
+            autocomplete="current-password"
+            class="w-full rounded-lg border-2 border-slate-200 px-3.5 py-2.5 text-sm text-secondary focus:border-primary dark:border-slate-700 dark:bg-slate-800 dark:text-light"
+        >
+    </div>
+    <p class="text-[11px] text-secondary/50 dark:text-light/50">
+        Nouveau ? Votre compte est créé automatiquement. Déjà client ? Entrez votre mot de passe habituel.
+    </p>
+    <p x-show="authError" x-cloak class="text-xs font-medium text-error" x-text="authError"></p>
+</div>
+
+<p x-show="purchaseError" x-cloak class="text-xs font-medium text-error" x-text="purchaseError"></p>
+
+{{-- Purchase button --}}
+<button
+    type="button"
+    @click="purchase()"
+    :disabled="!canPurchase"
+    class="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-secondary px-4 py-3.5 text-sm font-bold text-white shadow-lg transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+>
+    <template x-if="!purchasing && !authLoading">
+        <span class="flex items-center gap-2">
+            <i class="fa-solid fa-bolt"></i>
+            Acheter maintenant
+        </span>
+    </template>
+    <template x-if="purchasing || authLoading">
+        <span class="flex items-center gap-2">
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
+            Un instant...
+        </span>
+    </template>
+</button>
+
+<div class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] text-secondary/50 dark:text-light/50">
+    <span><i class="fa-solid fa-check text-success"></i> Paiement sécurisé</span>
+    <span><i class="fa-solid fa-check text-success"></i> Réception instantanée</span>
+    <span><i class="fa-solid fa-check text-success"></i> Support réactif</span>
+</div>
