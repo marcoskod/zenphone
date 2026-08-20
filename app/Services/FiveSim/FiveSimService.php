@@ -3,6 +3,7 @@
 namespace App\Services\FiveSim;
 
 use App\Services\FiveSim\Contracts\FiveSimServiceInterface;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -14,12 +15,27 @@ class FiveSimService implements FiveSimServiceInterface
 
     public function getProducts(string $country, string $operator = 'any'): array
     {
-        return $this->request('get', "/guest/products/{$country}/{$operator}");
+        return Cache::remember(
+            "fivesim.products.{$country}.{$operator}",
+            now()->addMinutes(5),
+            fn () => $this->request('get', "/guest/products/{$country}/{$operator}"),
+        );
     }
 
+    /**
+     * Calls GET /guest/countries. The exact response schema for this endpoint was not
+     * confirmed against the live 5sim docs (the docs page did not render it during
+     * fetching); it is expected to be a JSON object keyed by country slug (e.g. "russia")
+     * with fields such as iso codes, prefixes, and localized names, per 5sim's other
+     * /guest/* endpoints. Returned as-is; no controller consumes it yet (action_05).
+     */
     public function getCountries(): array
     {
-        return $this->request('get', '/guest/countries');
+        return Cache::remember(
+            'fivesim.countries',
+            now()->addMinutes(5),
+            fn () => $this->request('get', '/guest/countries'),
+        );
     }
 
     public function buyActivation(string $country, string $operator, string $product): array
