@@ -141,6 +141,40 @@ class PurchaseController extends Controller
     }
 
     /**
+     * POST /commande/{order}/annuler - called via fetch from the waiting screen (both
+     * the explicit cancel button and the timeout state reuse this same endpoint). Only
+     * refunds/marks the order cancelled once 5sim itself confirms the cancellation
+     * (status CANCELED); 5sim rejects cancellation once an SMS has already arrived
+     * ("order has sms"), so that case surfaces as a normal FiveSimException here rather
+     * than needing a separate guard.
+     */
+    public function cancel(Order $order): JsonResponse
+    {
+        abort_unless($order->user_id === auth()->id(), 403);
+
+        try {
+            $result = $this->fiveSim->cancelOrder($order->fivesim_order_id);
+        } catch (FiveSimException $e) {
+            return response()->json(['message' => $e->getMessage()], 502);
+        }
+
+        $status = strtolower($result['status'] ?? '');
+
+        if (! in_array($status, ['canceled', 'cancelled'], true)) {
+            return response()->json([
+                'message' => "5sim n'a pas confirmé l'annulation de cette commande.",
+            ], 422);
+        }
+
+        DB::transaction(function () use ($order) {
+            $order->update(['status' => 'cancelled']);
+            $order->user()->increment('balance', $order->price_fcfa);
+        });
+
+        return response()->json(['status' => 'cancelled']);
+    }
+
+    /**
      * 5sim's buyActivation() response includes an "expires" timestamp; fall back to a
      * 15-minute window (within 5sim's documented 5-20 minute activation range) if it's
      * missing or unparseable, rather than leaving the countdown undefined.

@@ -231,4 +231,78 @@ class PurchaseControllerTest extends TestCase
         $response->assertStatus(502);
         $this->assertSame('pending', $order->refresh()->status);
     }
+
+    public function test_cancel_refunds_balance_and_marks_order_cancelled(): void
+    {
+        Http::fake([
+            '*/user/cancel/*' => Http::response(['id' => 123456, 'status' => 'CANCELED'], 200),
+        ]);
+
+        $user = User::factory()->create(['balance' => 1000]);
+        $order = Order::factory()->for($user)->create([
+            'fivesim_order_id' => 123456,
+            'status' => 'pending',
+            'price_fcfa' => 420,
+        ]);
+
+        $response = $this->actingAs($user)->postJson(route('purchase.cancel', $order));
+
+        $response->assertStatus(200);
+        $response->assertJson(['status' => 'cancelled']);
+
+        $this->assertSame('cancelled', $order->refresh()->status);
+        $this->assertEquals(1420.0, (float) $user->fresh()->balance);
+    }
+
+    public function test_cancel_does_not_refund_when_5sim_does_not_confirm_cancellation(): void
+    {
+        Http::fake([
+            '*/user/cancel/*' => Http::response(['id' => 123456, 'status' => 'PENDING'], 200),
+        ]);
+
+        $user = User::factory()->create(['balance' => 1000]);
+        $order = Order::factory()->for($user)->create([
+            'fivesim_order_id' => 123456,
+            'status' => 'pending',
+            'price_fcfa' => 420,
+        ]);
+
+        $response = $this->actingAs($user)->postJson(route('purchase.cancel', $order));
+
+        $response->assertStatus(422);
+        $this->assertSame('pending', $order->refresh()->status);
+        $this->assertEquals(1000.0, (float) $user->fresh()->balance);
+    }
+
+    public function test_cancel_does_not_refund_when_5sim_rejects_the_cancellation(): void
+    {
+        Http::fake([
+            '*/user/cancel/*' => Http::response('order has sms', 400),
+        ]);
+
+        $user = User::factory()->create(['balance' => 1000]);
+        $order = Order::factory()->for($user)->create([
+            'fivesim_order_id' => 123456,
+            'status' => 'received',
+            'price_fcfa' => 420,
+        ]);
+
+        $response = $this->actingAs($user)->postJson(route('purchase.cancel', $order));
+
+        $response->assertStatus(502);
+        $this->assertSame('received', $order->refresh()->status);
+        $this->assertEquals(1000.0, (float) $user->fresh()->balance);
+    }
+
+    public function test_cancel_is_forbidden_for_another_users_order(): void
+    {
+        $owner = User::factory()->create();
+        $order = Order::factory()->for($owner)->create(['fivesim_order_id' => 123456]);
+
+        $intruder = User::factory()->create();
+
+        $response = $this->actingAs($intruder)->postJson(route('purchase.cancel', $order));
+
+        $response->assertStatus(403);
+    }
 }

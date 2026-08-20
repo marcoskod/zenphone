@@ -45,6 +45,20 @@
                 En attente du SMS...
             </div>
 
+            <div x-show="!smsCode" x-cloak class="flex flex-col items-center gap-3">
+                <button
+                    type="button"
+                    @click="cancelOrder()"
+                    :disabled="cancelling"
+                    class="inline-flex items-center gap-2 rounded-full border border-error/30 px-5 py-2 text-sm font-medium text-error transition hover:bg-error/5 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                    <span x-text="cancelling ? 'Annulation...' : 'Annuler la commande'"></span>
+                </button>
+
+                <p x-show="cancelError" x-cloak class="text-sm text-error" x-text="cancelError"></p>
+            </div>
+
             <div x-show="smsCode" x-cloak x-transition class="rounded-2xl border border-success/30 bg-success/5 p-6 text-center">
                 <p class="text-sm font-medium text-success">
                     <i class="fa-solid fa-circle-check"></i>

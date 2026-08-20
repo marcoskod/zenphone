@@ -70,6 +70,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/commande/{order}/attente', [PurchaseController::class, 'waiting'])
         ->name('purchase.waiting');
 
+    Route::post('/commande/{order}/annuler', [PurchaseController::class, 'cancel'])
+        ->name('purchase.cancel');
+
     // TODO(action_08): replace with the real orders/topups history page (filters, pagination).
     Route::view('/historique', 'pages.coming-soon', [
         'title' => 'Historique',

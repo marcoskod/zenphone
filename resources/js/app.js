@@ -173,6 +173,39 @@ Alpine.data('orderWaiting', (orderId, expiresAtIso, initialStatus = 'pending', i
     copiedPhone: false,
     copiedSms: false,
     timedOut: false,
+    cancelling: false,
+    cancelError: null,
+
+    async cancelOrder() {
+        if (!confirm('Voulez-vous vraiment annuler cette commande ? Le montant sera remboursé sur votre solde.')) {
+            return;
+        }
+
+        this.cancelling = true;
+        this.cancelError = null;
+
+        try {
+            const response = await fetch(`/commande/${this.orderId}/annuler`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    Accept: 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                clearInterval(this.countdownInterval);
+                clearInterval(this.pollInterval);
+                window.location.href = '/dashboard';
+                return;
+            }
+
+            const json = await response.json().catch(() => ({}));
+            this.cancelError = json.message ?? "Impossible d'annuler cette commande pour le moment.";
+        } finally {
+            this.cancelling = false;
+        }
+    },
 
     copyPhone(phone) {
         navigator.clipboard.writeText(phone);
