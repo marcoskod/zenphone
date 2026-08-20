@@ -15,25 +15,24 @@ const SERVICE_ICONS = {
     tiktok: 'fa-brands fa-tiktok',
 };
 
-// Best-effort flag emojis for the country slugs most likely to appear (5sim's exact
-// slug format wasn't confirmed against the live docs - see FiveSimService's code
-// comment); anything unrecognized falls back to a globe rather than guessing wrong.
+// Flag emojis for the country slugs most likely to appear. Verified against a live,
+// unauthenticated call to 5sim's GET /guest/countries during action_05: that endpoint
+// uses no separators in slugs (e.g. "ivorycoast", "burkinafaso") and, notably, does not
+// list "russia" or "mali"/"niger" at all despite 5sim being a Russian service - so those
+// are intentionally omitted rather than mapped to a slug that will never match. Anything
+// unrecognized falls back to a globe rather than guessing wrong.
 const COUNTRY_FLAGS = {
-    russia: '🇷🇺',
     usa: '🇺🇸',
     england: '🇬🇧',
-    uk: '🇬🇧',
     france: '🇫🇷',
-    ivory_coast: '🇨🇮',
+    ivorycoast: '🇨🇮',
     senegal: '🇸🇳',
-    mali: '🇲🇱',
     benin: '🇧🇯',
     cameroon: '🇨🇲',
     nigeria: '🇳🇬',
     ghana: '🇬🇭',
     togo: '🇹🇬',
-    burkina_faso: '🇧🇫',
-    niger: '🇳🇪',
+    burkinafaso: '🇧🇫',
     guinea: '🇬🇳',
 };
 

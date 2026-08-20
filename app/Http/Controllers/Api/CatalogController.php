@@ -51,10 +51,9 @@ class CatalogController extends Controller
 
     /**
      * GET /api/countries - formatted country list, consumed by the country-selector
-     * component. FiveSimService::getCountries()'s exact response schema was not
-     * confirmed against the live 5sim docs (see FiveSimService's code comment), so this
-     * is defensive: it accepts either a "text_en"/"name" field per entry or falls back
-     * to titleizing the country slug itself.
+     * component. Prefers the verified "text_en" field per entry (see
+     * FiveSimService::getCountries()'s code comment) and falls back to titleizing the
+     * slug itself if it's ever missing.
      */
     public function countries(): JsonResponse
     {

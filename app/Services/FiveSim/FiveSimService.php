@@ -26,11 +26,14 @@ class FiveSimService implements FiveSimServiceInterface
     }
 
     /**
-     * Calls GET /guest/countries. The exact response schema for this endpoint was not
-     * confirmed against the live 5sim docs (the docs page did not render it during
-     * fetching); it is expected to be a JSON object keyed by country slug (e.g. "russia")
-     * with fields such as iso codes, prefixes, and localized names, per 5sim's other
-     * /guest/* endpoints. Returned as-is; no controller consumes it yet (action_05).
+     * Calls GET /guest/countries. This endpoint's response schema was not in the fetched
+     * 5sim docs, but was verified during action_05 via a live, unauthenticated call (this
+     * endpoint needs no API key): a JSON object keyed by an unseparated country slug
+     * (e.g. "ivorycoast", "burkinafaso" - no underscores), each with iso/prefix objects,
+     * text_en/text_ru names, and per-operator "virtualN" availability flags. 153 countries
+     * were returned; notably "russia" is not among them despite 5sim being a Russian
+     * service, nor are "mali"/"niger". Returned as-is; formatted for the frontend by
+     * CatalogController::countries().
      */
     public function getCountries(): array
     {

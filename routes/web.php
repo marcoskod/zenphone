@@ -64,14 +64,7 @@ Route::middleware('auth')->group(function () {
         'icon' => 'fa-wallet',
     ])->name('topup');
 
-    // TODO(action_05 Assembly): swap this stub for PurchaseController@index once
-    // resources/views/purchase/index.blade.php exists.
-    Route::view('/acheter', 'pages.coming-soon', [
-        'title' => 'Acheter un numéro',
-        'message' => "La sélection de service et de pays pour l'achat d'un numéro arrive très prochainement.",
-        'icon' => 'fa-phone',
-    ])->name('purchase');
-
+    Route::get('/acheter', [PurchaseController::class, 'index'])->name('purchase');
     Route::post('/acheter', [PurchaseController::class, 'store'])->name('purchase.store');
 
     // TODO(action_06): replace with the real countdown/SMS-polling waiting screen.

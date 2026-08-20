@@ -1,7 +1,10 @@
 {{--
-    Service/country lists below are illustrative, same convention as the landing page's
-    pricing preview (Phase 2) - real options come from FiveSimService::getProducts()/
-    getCountries() once action_05 builds the purchase page these fields redirect to.
+    Service list is illustrative (same convention as the landing page's pricing preview,
+    Phase 2); the purchase page itself loads the real list live from
+    FiveSimService::getProducts(). Country values below are real, verified slugs (checked
+    against a live, unauthenticated call to 5sim's GET /guest/countries during action_05 -
+    that endpoint requires no country separators, e.g. "ivorycoast" not "ivory_coast", and
+    notably does not list "russia" at all despite it being 5sim's home market).
 --}}
 <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
     <h3 class="text-sm font-semibold text-secondary dark:text-light">Achat rapide</h3>
@@ -24,9 +27,9 @@
         <div>
             <label for="quick-buy-country" class="block text-xs font-medium text-secondary/70 dark:text-light/70">Pays</label>
             <select id="quick-buy-country" name="country" class="mt-1 block w-full rounded-xl border-slate-300 text-sm text-secondary shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-light">
-                <option value="russia">Russie</option>
-                <option value="ivory_coast">Côte d'Ivoire</option>
+                <option value="ivorycoast">Côte d'Ivoire</option>
                 <option value="senegal">Sénégal</option>
+                <option value="ghana">Ghana</option>
                 <option value="usa">États-Unis</option>
             </select>
         </div>
