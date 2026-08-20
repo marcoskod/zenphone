@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\FiveSimException;
 use App\Models\Order;
+use App\Models\User;
 use App\Services\FiveSim\Contracts\FiveSimServiceInterface;
 use App\Services\PricingService;
 use Illuminate\Http\JsonResponse;
@@ -36,20 +37,80 @@ class PurchaseController extends Controller
             'country' => ['required', 'string'],
         ]);
 
-        $user = $request->user();
+        $result = $this->attemptPurchase($request->user(), $validated['service'], $validated['country']);
 
-        try {
-            $products = $this->fiveSim->getProducts($validated['country'], 'any');
-        } catch (FiveSimException $e) {
-            return back()->withErrors(['service' => $e->getMessage()])->withInput();
+        if (! $result['success']) {
+            $errors = [$result['field'] => $result['error']];
+            $response = back()->withErrors($errors)->withInput();
+
+            if ($result['field'] === 'balance') {
+                $response->with('insufficient_balance', true);
+            }
+
+            return $response;
         }
 
-        $product = $products[$validated['service']] ?? null;
+        return redirect()->route('purchase.waiting', $result['order']);
+    }
+
+    /**
+     * POST /api/purchase - JSON counterpart of store(), used by the single-page
+     * homepage's "Acheter maintenant" flow. Reuses attemptPurchase() rather than
+     * duplicating the balance-check/buyActivation/order-creation logic.
+     */
+    public function storeJson(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'service' => ['required', 'string'],
+            'country' => ['required', 'string'],
+        ]);
+
+        $result = $this->attemptPurchase($request->user(), $validated['service'], $validated['country']);
+
+        if (! $result['success']) {
+            return response()->json([
+                'message' => $result['error'],
+                'field' => $result['field'],
+            ], $result['status']);
+        }
+
+        $order = $result['order'];
+
+        return response()->json([
+            'order_id' => $order->id,
+            'phone' => $order->phone,
+            'status' => $order->status,
+            'expires_at' => $order->expires_at?->toIso8601String(),
+            'waiting_url' => route('purchase.waiting', $order),
+        ]);
+    }
+
+    /**
+     * Validates service+country against live 5sim pricing, checks the user's balance
+     * (never calling buyActivation() if it's insufficient), and - if sufficient - buys
+     * the activation and creates the Order inside a DB transaction. Shared by the
+     * redirect-based store() and the JSON storeJson(), so both surfaces (the existing
+     * /acheter page and the new single-page homepage) get identical behavior.
+     *
+     * @return array{success: true, order: Order}|array{success: false, field: string, error: string, status: int}
+     */
+    private function attemptPurchase(User $user, string $service, string $country): array
+    {
+        try {
+            $products = $this->fiveSim->getProducts($country, 'any');
+        } catch (FiveSimException $e) {
+            return ['success' => false, 'field' => 'service', 'error' => $e->getMessage(), 'status' => 502];
+        }
+
+        $product = $products[$service] ?? null;
 
         if (! is_array($product) || ! isset($product['Price'])) {
-            return back()
-                ->withErrors(['service' => "Ce service n'est pas disponible pour ce pays."])
-                ->withInput();
+            return [
+                'success' => false,
+                'field' => 'service',
+                'error' => "Ce service n'est pas disponible pour ce pays.",
+                'status' => 404,
+            ];
         }
 
         $priceFcfa = $this->pricing->calculatePrice((float) $product['Price']);
@@ -57,24 +118,26 @@ class PurchaseController extends Controller
         // Checked (and, on failure, returned) before any 5sim call is made, so an
         // insufficient balance never triggers a buyActivation() request.
         if ($user->balance < $priceFcfa) {
-            return back()
-                ->withErrors(['balance' => 'Solde insuffisant pour cet achat.'])
-                ->with('insufficient_balance', true)
-                ->withInput();
+            return [
+                'success' => false,
+                'field' => 'balance',
+                'error' => 'Solde insuffisant pour cet achat.',
+                'status' => 422,
+            ];
         }
 
         try {
-            $order = DB::transaction(function () use ($user, $validated, $priceFcfa) {
+            $order = DB::transaction(function () use ($user, $service, $country, $priceFcfa) {
                 // buyActivation() runs inside the transaction: if it throws, neither the
                 // order row nor the balance deduction below is ever committed, so a
                 // failed 5sim call never leaves the user debited.
-                $activation = $this->fiveSim->buyActivation($validated['country'], 'any', $validated['service']);
+                $activation = $this->fiveSim->buyActivation($country, 'any', $service);
 
                 $order = Order::create([
                     'user_id' => $user->id,
                     'fivesim_order_id' => $activation['id'],
-                    'service' => $validated['service'],
-                    'country' => $validated['country'],
+                    'service' => $service,
+                    'country' => $country,
                     'phone' => $activation['phone'] ?? '',
                     'price_fcfa' => $priceFcfa,
                     'status' => strtolower($activation['status'] ?? 'pending'),
@@ -87,10 +150,10 @@ class PurchaseController extends Controller
                 return $order;
             });
         } catch (FiveSimException $e) {
-            return back()->withErrors(['service' => $e->getMessage()])->withInput();
+            return ['success' => false, 'field' => 'service', 'error' => $e->getMessage(), 'status' => 502];
         }
 
-        return redirect()->route('purchase.waiting', $order);
+        return ['success' => true, 'order' => $order];
     }
 
     public function waiting(Order $order): View
