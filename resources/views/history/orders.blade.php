@@ -96,6 +96,10 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="border-t border-slate-100 p-4 dark:border-slate-800">
+                    {{ $orders->links() }}
+                </div>
             </div>
         </div>
     </div>

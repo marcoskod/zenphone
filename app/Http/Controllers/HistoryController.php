@@ -11,7 +11,8 @@ class HistoryController extends Controller
     public function orders(Request $request): View
     {
         $orders = $this->applyOrderFilters($request->user()->orders()->latest(), $request)
-            ->get();
+            ->paginate(20)
+            ->appends($request->query());
 
         return view('history.orders', ['orders' => $orders]);
     }
@@ -19,7 +20,8 @@ class HistoryController extends Controller
     public function topups(Request $request): View
     {
         $topups = $this->applyTopupFilters($request->user()->topups()->latest(), $request)
-            ->get();
+            ->paginate(20)
+            ->appends($request->query());
 
         return view('history.topups', ['topups' => $topups]);
     }
