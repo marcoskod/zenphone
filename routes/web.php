@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PurchaseController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'landing')->name('home');
@@ -63,13 +64,19 @@ Route::middleware('auth')->group(function () {
         'icon' => 'fa-wallet',
     ])->name('topup');
 
-    // TODO(action_05): replace with the real purchase page (service/country selectors,
-    // live FCFA pricing, buyActivation()).
+    // TODO(action_05 Assembly): swap this stub for PurchaseController@index once
+    // resources/views/purchase/index.blade.php exists.
     Route::view('/acheter', 'pages.coming-soon', [
         'title' => 'Acheter un numéro',
         'message' => "La sélection de service et de pays pour l'achat d'un numéro arrive très prochainement.",
         'icon' => 'fa-phone',
     ])->name('purchase');
+
+    Route::post('/acheter', [PurchaseController::class, 'store'])->name('purchase.store');
+
+    // TODO(action_06): replace with the real countdown/SMS-polling waiting screen.
+    Route::get('/commande/{order}/attente', [PurchaseController::class, 'waiting'])
+        ->name('purchase.waiting');
 
     // TODO(action_08): replace with the real orders/topups history page (filters, pagination).
     Route::view('/historique', 'pages.coming-soon', [
