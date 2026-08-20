@@ -60,6 +60,14 @@ Route::middleware('auth')->group(function () {
         'message' => 'Le paiement Mobile Money (Orange Money, Wave, MTN MoMo, Moov Money) arrive très prochainement.',
         'icon' => 'fa-wallet',
     ])->name('topup');
+
+    // TODO(action_05): replace with the real purchase page (service/country selectors,
+    // live FCFA pricing, buyActivation()).
+    Route::view('/acheter', 'pages.coming-soon', [
+        'title' => 'Acheter un numéro',
+        'message' => "La sélection de service et de pays pour l'achat d'un numéro arrive très prochainement.",
+        'icon' => 'fa-phone',
+    ])->name('purchase');
 });
 
 require __DIR__.'/auth.php';
