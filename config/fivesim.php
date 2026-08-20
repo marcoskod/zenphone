@@ -8,4 +8,6 @@ return [
 
     'margin_percent' => env('FIVESIM_MARGIN_PERCENT', 20),
 
+    'exchange_rate_usd_fcfa' => env('EXCHANGE_RATE_USD_FCFA', 600),
+
 ];

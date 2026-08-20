@@ -81,6 +81,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('api')->name('api.')->group(function () {
         Route::get('/services', [CatalogController::class, 'services'])->name('services');
         Route::get('/countries', [CatalogController::class, 'countries'])->name('countries');
+        Route::get('/price', [CatalogController::class, 'price'])->name('price');
     });
 });
 

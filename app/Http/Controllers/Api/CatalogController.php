@@ -5,13 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\FiveSimException;
 use App\Http\Controllers\Controller;
 use App\Services\FiveSim\Contracts\FiveSimServiceInterface;
+use App\Services\PricingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CatalogController extends Controller
 {
-    public function __construct(protected FiveSimServiceInterface $fiveSim)
-    {
+    public function __construct(
+        protected FiveSimServiceInterface $fiveSim,
+        protected PricingService $pricing,
+    ) {
     }
 
     /**
@@ -73,5 +76,38 @@ class CatalogController extends Controller
             ->values();
 
         return response()->json(['data' => $formatted]);
+    }
+
+    /**
+     * GET /api/price?service=&country= - live FCFA price (5sim USD price converted via
+     * PricingService), called from Alpine on every service/country change.
+     */
+    public function price(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'service' => ['required', 'string'],
+            'country' => ['required', 'string'],
+        ]);
+
+        try {
+            $products = $this->fiveSim->getProducts($validated['country'], 'any');
+        } catch (FiveSimException $e) {
+            return response()->json(['message' => $e->getMessage()], 502);
+        }
+
+        $product = $products[$validated['service']] ?? null;
+
+        if (! is_array($product) || ! isset($product['Price'])) {
+            return response()->json(['message' => "Ce service n'est pas disponible pour ce pays."], 404);
+        }
+
+        $priceUsd = (float) $product['Price'];
+
+        return response()->json([
+            'service' => $validated['service'],
+            'country' => $validated['country'],
+            'price_usd' => $priceUsd,
+            'price_fcfa' => $this->pricing->calculatePrice($priceUsd),
+        ]);
     }
 }

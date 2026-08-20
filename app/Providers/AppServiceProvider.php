@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\FiveSim\Contracts\FiveSimServiceInterface;
 use App\Services\FiveSim\FiveSimService;
+use App\Services\PricingService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -15,6 +16,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(FiveSimServiceInterface::class, function ($app) {
             return new FiveSimService($app['config']['fivesim']);
+        });
+
+        $this->app->singleton(PricingService::class, function ($app) {
+            return new PricingService($app['config']['fivesim']);
         });
     }
 

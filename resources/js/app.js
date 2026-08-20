@@ -44,6 +44,10 @@ Alpine.data('purchaseForm', (initialService = '', initialCountry = '') => ({
     countries: [],
     serviceFilter: '',
     countryFilter: '',
+    priceUsd: null,
+    priceFcfa: null,
+    loadingPrice: false,
+    showConfirm: false,
 
     get filteredServices() {
         const term = this.serviceFilter.toLowerCase();
@@ -55,6 +59,28 @@ Alpine.data('purchaseForm', (initialService = '', initialCountry = '') => ({
         const term = this.countryFilter.toLowerCase();
 
         return this.countries.filter((item) => item.name.toLowerCase().includes(term));
+    },
+
+    get selectedServiceLabel() {
+        const found = this.services.find((item) => item.code === this.service);
+
+        return found ? found.label : this.service;
+    },
+
+    get selectedCountryLabel() {
+        const found = this.countries.find((item) => item.code === this.country);
+
+        return found ? found.name : this.country;
+    },
+
+    get priceLabel() {
+        if (this.loadingPrice) {
+            return 'Calcul du prix...';
+        }
+
+        return this.priceFcfa !== null
+            ? new Intl.NumberFormat('fr-FR').format(this.priceFcfa) + ' FCFA'
+            : 'Sélectionnez un service et un pays';
     },
 
     serviceIcon(code) {
@@ -82,13 +108,44 @@ Alpine.data('purchaseForm', (initialService = '', initialCountry = '') => ({
         this.countries = json.data ?? [];
     },
 
+    async fetchPrice() {
+        if (!this.service || !this.country) {
+            this.priceUsd = null;
+            this.priceFcfa = null;
+            return;
+        }
+
+        this.loadingPrice = true;
+
+        try {
+            const response = await fetch(
+                `/api/price?service=${encodeURIComponent(this.service)}&country=${encodeURIComponent(this.country)}`,
+            );
+
+            if (!response.ok) {
+                this.priceUsd = null;
+                this.priceFcfa = null;
+                return;
+            }
+
+            const json = await response.json();
+            this.priceUsd = json.price_usd;
+            this.priceFcfa = json.price_fcfa;
+        } finally {
+            this.loadingPrice = false;
+        }
+    },
+
     selectService(code) {
         this.service = code;
+        this.fetchPrice();
     },
 
     selectCountry(code) {
         this.country = code;
         this.service = '';
+        this.priceUsd = null;
+        this.priceFcfa = null;
         this.loadServices();
     },
 
@@ -97,6 +154,10 @@ Alpine.data('purchaseForm', (initialService = '', initialCountry = '') => ({
 
         if (this.country) {
             this.loadServices();
+        }
+
+        if (this.service && this.country) {
+            this.fetchPrice();
         }
     },
 }));
