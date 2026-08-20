@@ -68,6 +68,13 @@ Route::middleware('auth')->group(function () {
         'message' => "La sélection de service et de pays pour l'achat d'un numéro arrive très prochainement.",
         'icon' => 'fa-phone',
     ])->name('purchase');
+
+    // TODO(action_08): replace with the real orders/topups history page (filters, pagination).
+    Route::view('/historique', 'pages.coming-soon', [
+        'title' => 'Historique',
+        'message' => "L'historique complet de vos numéros et recharges arrive très prochainement.",
+        'icon' => 'fa-clock-rotate-left',
+    ])->name('history');
 });
 
 require __DIR__.'/auth.php';

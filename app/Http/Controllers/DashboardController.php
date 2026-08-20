@@ -20,9 +20,12 @@ class DashboardController extends Controller
             'total_spent' => (float) $user->orders()->sum('price_fcfa'),
         ];
 
+        $recentOrders = $user->orders()->latest()->take(5)->get();
+
         return view('dashboard', [
             'stats' => $stats,
             'chartData' => $this->getActivityChartData($user),
+            'recentOrders' => $recentOrders,
         ]);
     }
 
