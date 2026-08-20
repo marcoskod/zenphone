@@ -23,9 +23,37 @@ class RegistrationTest extends TestCase
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
+            'cgu' => '1',
         ]);
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
+    }
+
+    public function test_registration_fails_without_accepting_the_cgu(): void
+    {
+        $response = $this->post('/register', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $response->assertSessionHasErrors('cgu');
+        $this->assertGuest();
+    }
+
+    public function test_registration_succeeds_when_cgu_is_accepted(): void
+    {
+        $response = $this->post('/register', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'cgu' => '1',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertAuthenticated();
     }
 }
