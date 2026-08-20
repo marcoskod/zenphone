@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseController;
 use Illuminate\Support\Facades\Route;
@@ -73,12 +74,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/commande/{order}/annuler', [PurchaseController::class, 'cancel'])
         ->name('purchase.cancel');
 
-    // TODO(action_08): replace with the real orders/topups history page (filters, pagination).
-    Route::view('/historique', 'pages.coming-soon', [
-        'title' => 'Historique',
-        'message' => "L'historique complet de vos numéros et recharges arrive très prochainement.",
-        'icon' => 'fa-clock-rotate-left',
-    ])->name('history');
+    Route::get('/historique/commandes', [HistoryController::class, 'orders'])->name('history');
 
     Route::prefix('api')->name('api.')->group(function () {
         Route::get('/services', [CatalogController::class, 'services'])->name('services');
