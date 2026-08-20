@@ -52,6 +52,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // TODO(action_07): replace with the real Mobile Money top-up page once the
+    // aggregator (CinetPay/Kkiapay/PayDunya) is chosen.
+    Route::view('/recharger', 'pages.coming-soon', [
+        'title' => 'Recharger mon solde',
+        'message' => 'Le paiement Mobile Money (Orange Money, Wave, MTN MoMo, Moov Money) arrive très prochainement.',
+        'icon' => 'fa-wallet',
+    ])->name('topup');
 });
 
 require __DIR__.'/auth.php';
