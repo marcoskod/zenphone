@@ -47,6 +47,17 @@
             {{ __('Se connecter') }}
         </x-primary-button>
 
+        <div class="flex items-center gap-3 text-xs uppercase text-secondary/40 dark:text-light/40">
+            <span class="h-px flex-1 bg-slate-200 dark:bg-slate-700"></span>
+            ou
+            <span class="h-px flex-1 bg-slate-200 dark:bg-slate-700"></span>
+        </div>
+
+        <a href="{{ route('auth.google') }}" class="flex w-full items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-secondary shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-light dark:hover:bg-slate-700">
+            <i class="fa-brands fa-google text-primary"></i>
+            Continuer avec Google
+        </a>
+
         <p class="text-center text-sm text-secondary/60 dark:text-light/60">
             Pas encore de compte ?
             <a href="{{ route('register') }}" class="font-medium text-primary hover:text-primary/80">Créer un compte</a>
