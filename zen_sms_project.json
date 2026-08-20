@@ -1,0 +1,1470 @@
+{
+  "projet": "Zen_Sms",
+  "objectif": "Construire une plateforme web permettant à des clients d'Afrique de l'Ouest d'acheter des numéros virtuels internationaux pour recevoir des SMS de vérification (WhatsApp, Google, Instagram, TikTok, Telegram, etc.), en s'appuyant sur l'API 5sim comme fournisseur backend, avec paiement local via Mobile Money (Orange Money, Wave, MTN MoMo, Moov Money).",
+  "technologie": {
+    "backend": "Laravel (PHP) + MySQL",
+    "frontend": "Blade + Tailwind CSS + Alpine.js pour l'interactivité légère",
+    "graphiques": "Chart.js pour les statistiques (dashboard admin/utilisateur)",
+    "temps_reel": "Polling AJAX (ou Laravel Echo/WebSockets si besoin de vraie réactivité) pour l'attente et l'affichage du SMS reçu",
+    "api_externe_principale": "5sim.net (achat de numéros, réception de SMS)",
+    "paiement": "Agrégateur Mobile Money Afrique de l'Ouest (à valider: CinetPay, Kkiapay ou PayDunya) pour Orange Money / Wave / MTN MoMo / Moov Money",
+    "authentification": "Laravel Breeze ou Fortify (email + option Google OAuth)",
+    "notifications": "File d'attente Laravel (queues) pour emails, notifications in-app en base de données",
+    "services_tiers": {
+      "5sim": {
+        "role": "Fournisseur backend des numéros virtuels et de la réception des SMS",
+        "documentation": "https://5sim.net/docs#user",
+        "note": "Toujours se référer à cette documentation officielle pour les schémas de requêtes/réponses exacts avant d'implémenter chaque endpoint"
+      }
+    }
+  },
+  "instructions_base_global": {
+    "palette_couleurs": {
+      "primaire": "#0EA5A4 (teal apaisant, cohérent avec le nom 'Zen')",
+      "secondaire": "#0F172A (bleu nuit profond pour le texte/fond sombre)",
+      "accent": "#F59E0B (orange chaleureux pour CTA et alertes)",
+      "fond_clair": "#F8FAFC",
+      "succes": "#22C55E",
+      "erreur": "#EF4444",
+      "note": "Palette proposée par défaut — à ajuster si Marcos a une identité de marque différente en tête"
+    },
+    "typographie": {
+      "police_principale": "Inter (Google Fonts) pour tout le texte",
+      "police_titres": "Inter, graisses 600-700 pour les titres",
+      "taille_base": "16px, échelle Tailwind par défaut"
+    },
+    "theme": "Clair par défaut avec support dark mode via Tailwind (class strategy), toggle accessible dans le header",
+    "langue": "Français par défaut (fr), structure prête pour multilingue futur (en) mais non prioritaire au lancement",
+    "responsive": "Mobile-first obligatoire — la majorité du trafic ciblé (Afrique de l'Ouest) sera mobile",
+    "composants_ui": {
+      "source_privilegiee": "uiverse.io",
+      "regle": "Privilégier presque systématiquement les composants au design soigné disponibles sur uiverse.io (boutons, cards, loaders, toggles, inputs, etc.) plutôt que des composants Tailwind génériques faits maison",
+      "exception": "Ne PAS forcer un composant uiverse.io si son intégration risque d'endommager le code existant, de casser la structure Blade/Alpine, ou d'introduire du CSS/JS conflictuel — dans ce cas, revenir à un composant Tailwind standard et le signaler"
+    },
+    "icones": {
+      "librairie": "Font Awesome",
+      "integration": "Via le CDN avec la feuille de style all.min.css (toutes les familles d'icônes disponibles)",
+      "usage": "Utiliser Font Awesome pour toutes les icônes de l'interface (navigation, statuts, actions, réseaux/services supportés) sauf si un composant uiverse.io intègre déjà sa propre icône"
+    },
+    "integration_5sim": {
+      "base_url": "https://5sim.net/v1",
+      "documentation": "https://5sim.net/docs#user",
+      "authentification": "Bearer token API stocké en variable d'environnement (.env: FIVESIM_API_KEY), jamais exposé côté client",
+      "endpoints_cles": [
+        "/guest/products/{country}/{operator}",
+        "/user/buy/activation/{country}/{operator}/{product}",
+        "/user/check/{id}",
+        "/user/finish/{id}",
+        "/user/cancel/{id}",
+        "/user/sms/inbox/{id}"
+      ],
+      "marge": "Prévoir une marge configurable (%, appliquée en FCFA) entre le prix 5sim et le prix affiché au client"
+    },
+    "paiement_mobile_money": {
+      "devise_affichee": "FCFA uniquement, conversion interne depuis USD (tarifs 5sim) via un taux de change configurable en base",
+      "montant_min_recharge": "500 FCFA",
+      "operateurs_prioritaires": [
+        "Orange Money",
+        "Wave",
+        "MTN MoMo",
+        "Moov Money"
+      ]
+    },
+    "conventions_code": {
+      "structure": "Respecter l'architecture Laravel standard (Controllers, Services, Repositories pour l'appel API 5sim isolé dans une classe FiveSimService dédiée)",
+      "commits": "Un commit logique par tâche accomplie",
+      "tests": "Tests Feature Laravel pour les flux critiques (achat de numéro, recharge, réception SMS)"
+    }
+  },
+  "actions": [
+    {
+      "id": "action_01",
+      "nom": "Setup & Configuration Initiale",
+      "type": "infrastructure",
+      "description": "Initialisation du projet Laravel, base de données, environnement, clé API 5sim, structure de base du dépôt.",
+      "sous_actions": [
+        {
+          "id": "action_01_sa_01",
+          "nom": "Initialisation du projet Laravel",
+          "description": "Création du projet Laravel, configuration du dépôt Git, structure de dossiers de base.",
+          "taches": [
+            {
+              "nom": "Créer le projet Laravel",
+              "Instructions": [
+                "Exécute cette commande dans le terminal: composer create-project laravel/laravel zen_sms",
+                "Déplace-toi dans le dossier créé: cd zen_sms"
+              ]
+            },
+            {
+              "nom": "Initialiser le dépôt Git",
+              "Instructions": [
+                "Exécute: git init",
+                "Vérifie que le fichier .gitignore standard Laravel est bien présent",
+                "Fais un premier commit: git add . && git commit -m \"Initial commit - Laravel setup\""
+              ]
+            },
+            {
+              "nom": "Structurer les dossiers de base",
+              "Instructions": [
+                "Crée le dossier app/Services",
+                "Crée le dossier app/Services/FiveSim",
+                "Crée le dossier resources/views/components pour les composants Blade réutilisables"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_01_sa_02",
+          "nom": "Configuration base de données MySQL",
+          "description": "Création de la base de données, connexion Laravel, migrations initiales (users, etc.).",
+          "taches": [
+            {
+              "nom": "Créer la base de données",
+              "Instructions": [
+                "Connecte-toi à MySQL: mysql -u root -p",
+                "Exécute: CREATE DATABASE zen_sms CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+              ]
+            },
+            {
+              "nom": "Configurer la connexion Laravel",
+              "Instructions": [
+                "Ouvre le fichier .env",
+                "Renseigne DB_DATABASE=zen_sms, DB_USERNAME et DB_PASSWORD selon l'environnement local"
+              ]
+            },
+            {
+              "nom": "Créer la migration d'extension de la table users",
+              "Instructions": [
+                "Exécute: php artisan make:migration add_balance_to_users_table --table=users",
+                "Ajoute une colonne decimal('balance', 12, 2)->default(0) dans la migration",
+                "Exécute: php artisan migrate"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_01_sa_03",
+          "nom": "Configuration de l'environnement",
+          "description": "Fichier .env avec les clés 5sim, agrégateur Mobile Money, mail, et variables de marge/taux de change.",
+          "taches": [
+            {
+              "nom": "Ajouter les variables 5sim",
+              "Instructions": [
+                "Ouvre le fichier .env",
+                "Ajoute la ligne: FIVESIM_API_KEY=",
+                "Ajoute la ligne: FIVESIM_BASE_URL=https://5sim.net/v1"
+              ]
+            },
+            {
+              "nom": "Ajouter les variables Mobile Money",
+              "Instructions": [
+                "Ajoute les clés API de l'agrégateur Mobile Money choisi (ex: CINETPAY_API_KEY, CINETPAY_SITE_ID) dans .env"
+              ]
+            },
+            {
+              "nom": "Ajouter les variables métier",
+              "Instructions": [
+                "Ajoute FIVESIM_MARGIN_PERCENT=20 (valeur par défaut modifiable)",
+                "Ajoute EXCHANGE_RATE_USD_FCFA=600 (valeur par défaut modifiable)"
+              ]
+            },
+            {
+              "nom": "Créer un fichier de config dédié",
+              "Instructions": [
+                "Crée le fichier config/fivesim.php",
+                "Structure-le pour lire env('FIVESIM_API_KEY'), env('FIVESIM_BASE_URL'), env('FIVESIM_MARGIN_PERCENT')"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_01_sa_04",
+          "nom": "Installation des dépendances frontend",
+          "description": "Installation et configuration de Tailwind CSS, Alpine.js, Font Awesome (all.min.css), Chart.js.",
+          "taches": [
+            {
+              "nom": "Installer Tailwind CSS",
+              "Instructions": [
+                "Exécute: npm install -D tailwindcss postcss autoprefixer",
+                "Exécute: npx tailwindcss init -p",
+                "Configure le champ content de tailwind.config.js pour cibler resources/views/**/*.blade.php"
+              ]
+            },
+            {
+              "nom": "Installer Alpine.js",
+              "Instructions": [
+                "Exécute: npm install alpinejs",
+                "Importe et initialise Alpine dans resources/js/app.js avec Alpine.start()"
+              ]
+            },
+            {
+              "nom": "Intégrer Font Awesome",
+              "Instructions": [
+                "Ajoute dans le <head> du layout principal: <link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css\">"
+              ]
+            },
+            {
+              "nom": "Installer Chart.js",
+              "Instructions": [
+                "Exécute: npm install chart.js",
+                "Importe Chart.js dans resources/js/app.js"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_01_sa_05",
+          "nom": "Structure de la couche Service",
+          "description": "Mise en place du dossier app/Services avec la classe FiveSimService et le pattern Repository si besoin.",
+          "taches": [
+            {
+              "nom": "Créer la classe FiveSimService",
+              "Instructions": [
+                "Crée le fichier app/Services/FiveSim/FiveSimService.php",
+                "Injecte la configuration config('fivesim') dans le constructeur",
+                "Prépare une méthode privée request() utilisant Laravel Http::withToken()"
+              ]
+            },
+            {
+              "nom": "Créer l'interface du service",
+              "Instructions": [
+                "Crée app/Services/FiveSim/Contracts/FiveSimServiceInterface.php avec les signatures des méthodes principales",
+                "Lie l'interface à l'implémentation dans app/Providers/AppServiceProvider.php"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_01_sa_06",
+          "nom": "Configuration des queues",
+          "description": "Configuration du driver de queue Laravel (database ou redis) pour les notifications asynchrones.",
+          "taches": [
+            {
+              "nom": "Configurer le driver de queue",
+              "Instructions": [
+                "Ouvre .env et mets QUEUE_CONNECTION=database",
+                "Exécute: php artisan queue:table",
+                "Exécute: php artisan migrate"
+              ]
+            },
+            {
+              "nom": "Vérifier le fonctionnement du worker",
+              "Instructions": [
+                "Lance en local: php artisan queue:work pour tester le traitement des jobs"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action_02",
+      "nom": "Page d'Accueil (Landing)",
+      "type": "page",
+      "description": "Page marketing publique présentant le service, les avantages, les services supportés et un appel à l'action vers l'inscription.",
+      "sous_actions": [
+        {
+          "id": "action_02_sa_01",
+          "nom": "Header & Navigation",
+          "description": "Logo, menu (Accueil, Tarifs, FAQ, Connexion, Inscription), toggle dark mode, responsive burger menu mobile.",
+          "taches": [
+            {
+              "nom": "Créer le composant Blade header",
+              "Instructions": [
+                "Crée le fichier resources/views/components/layout/header.blade.php",
+                "Inclus le logo, les liens Accueil/Tarifs/FAQ/Connexion/Inscription"
+              ]
+            },
+            {
+              "nom": "Ajouter le toggle dark mode",
+              "Instructions": [
+                "Ajoute un bouton avec x-data Alpine pour basculer une classe 'dark' sur <html>",
+                "Persiste le choix dans le localStorage via Alpine"
+              ]
+            },
+            {
+              "nom": "Rendre le menu responsive",
+              "Instructions": [
+                "Ajoute un bouton burger visible en dessous du breakpoint md",
+                "Utilise x-show pour afficher/masquer le menu mobile"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_02_sa_02",
+          "nom": "Section Hero",
+          "description": "Accroche principale, sous-titre, CTA vers l'inscription, illustration/visuel.",
+          "taches": [
+            {
+              "nom": "Créer la section hero",
+              "Instructions": [
+                "Crée le fichier resources/views/components/landing/hero.blade.php",
+                "Ajoute le titre accrocheur, le sous-titre, et le bouton CTA vers la route register"
+              ]
+            },
+            {
+              "nom": "Intégrer un bouton uiverse.io pour le CTA",
+              "Instructions": [
+                "Recherche sur uiverse.io un bouton animé cohérent avec la palette teal/orange définie",
+                "Intègre-le en Blade/Tailwind sans casser le reste du layout ; sinon revenir à un bouton Tailwind standard"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_02_sa_03",
+          "nom": "Section 'Comment ça marche'",
+          "description": "3-4 étapes illustrées (créer un compte, recharger, choisir un numéro, recevoir le SMS).",
+          "taches": [
+            {
+              "nom": "Créer la section étapes",
+              "Instructions": [
+                "Crée resources/views/components/landing/how-it-works.blade.php",
+                "Structure 4 étapes en grid avec icônes Font Awesome (fa-user-plus, fa-wallet, fa-phone, fa-comment-sms)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_02_sa_04",
+          "nom": "Section services supportés",
+          "description": "Grille de logos/icônes des services populaires (WhatsApp, Google, Instagram, TikTok, Telegram, Facebook...).",
+          "taches": [
+            {
+              "nom": "Créer la grille de services supportés",
+              "Instructions": [
+                "Crée resources/views/components/landing/supported-services.blade.php",
+                "Affiche une grille de logos/icônes pour WhatsApp, Google, Instagram, TikTok, Telegram, Facebook"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_02_sa_05",
+          "nom": "Section aperçu tarifs",
+          "description": "Quelques cards de tarifs représentatifs avec lien vers la page Tarifs complète.",
+          "taches": [
+            {
+              "nom": "Créer les cards de tarifs",
+              "Instructions": [
+                "Crée resources/views/components/landing/pricing-preview.blade.php",
+                "Affiche 3 à 4 cards représentatives avec prix en FCFA",
+                "Ajoute un lien 'Voir tous les tarifs' vers la route pricing"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_02_sa_06",
+          "nom": "Section avis/témoignages",
+          "description": "Bloc de témoignages clients (statique au lancement, dynamisable plus tard).",
+          "taches": [
+            {
+              "nom": "Créer le bloc témoignages",
+              "Instructions": [
+                "Crée resources/views/components/landing/testimonials.blade.php",
+                "Structure les données de témoignages dans un tableau PHP statique passé à la vue au lancement"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_02_sa_07",
+          "nom": "Section FAQ résumée",
+          "description": "3-5 questions fréquentes en accordéon avec lien vers la FAQ complète.",
+          "taches": [
+            {
+              "nom": "Créer l'accordéon FAQ résumé",
+              "Instructions": [
+                "Crée resources/views/components/landing/faq-preview.blade.php",
+                "Utilise Alpine.js (x-data, x-show) pour l'ouverture/fermeture des questions",
+                "Ajoute un lien vers la page FAQ complète"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_02_sa_08",
+          "nom": "Footer",
+          "description": "Liens légaux, réseaux sociaux, contact, liens rapides vers les pays/services populaires.",
+          "taches": [
+            {
+              "nom": "Créer le composant footer",
+              "Instructions": [
+                "Crée resources/views/components/layout/footer.blade.php",
+                "Ajoute les liens légaux, réseaux sociaux, contact, et liens rapides pays/services populaires"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action_03",
+      "nom": "Authentification",
+      "type": "page",
+      "description": "Inscription, connexion, mot de passe oublié, éventuellement connexion Google.",
+      "sous_actions": [
+        {
+          "id": "action_03_sa_01",
+          "nom": "Formulaire d'inscription",
+          "description": "Champs nom, email, mot de passe, confirmation, case CGU obligatoire.",
+          "taches": [
+            {
+              "nom": "Installer Laravel Breeze",
+              "Instructions": [
+                "Exécute: composer require laravel/breeze --dev",
+                "Exécute: php artisan breeze:install blade",
+                "Exécute: npm install && npm run build"
+              ]
+            },
+            {
+              "nom": "Personnaliser la vue d'inscription",
+              "Instructions": [
+                "Ouvre resources/views/auth/register.blade.php",
+                "Adapte le style à la palette du projet (teal/orange), remplace les composants par des équivalents uiverse.io si pertinent"
+              ]
+            },
+            {
+              "nom": "Ajouter la case CGU obligatoire",
+              "Instructions": [
+                "Ajoute un champ checkbox 'required' lié aux CGU dans register.blade.php",
+                "Ajoute la validation correspondante côté contrôleur d'inscription"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_03_sa_02",
+          "nom": "Formulaire de connexion",
+          "description": "Champs email/mot de passe, case 'se souvenir de moi', lien mot de passe oublié.",
+          "taches": [
+            {
+              "nom": "Personnaliser la vue de connexion",
+              "Instructions": [
+                "Ouvre resources/views/auth/login.blade.php",
+                "Adapte le style à la charte du projet",
+                "Vérifie la présence de la case 'se souvenir de moi' et du lien mot de passe oublié"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_03_sa_03",
+          "nom": "Mot de passe oublié / réinitialisation",
+          "description": "Formulaire d'envoi de lien par email + formulaire de réinitialisation.",
+          "taches": [
+            {
+              "nom": "Vérifier et personnaliser le flux de réinitialisation",
+              "Instructions": [
+                "Ouvre resources/views/auth/forgot-password.blade.php et reset-password.blade.php",
+                "Adapte le style à la charte du projet",
+                "Teste l'envoi d'email en local avec MAIL_MAILER=log dans .env"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_03_sa_04",
+          "nom": "Connexion via Google (optionnel)",
+          "description": "Bouton OAuth Google en complément de l'authentification classique.",
+          "taches": [
+            {
+              "nom": "Installer Laravel Socialite",
+              "Instructions": [
+                "Exécute: composer require laravel/socialite",
+                "Ajoute GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI dans .env et config/services.php"
+              ]
+            },
+            {
+              "nom": "Créer les routes et le contrôleur OAuth",
+              "Instructions": [
+                "Crée app/Http/Controllers/Auth/GoogleAuthController.php avec les méthodes redirect() et callback()",
+                "Ajoute les routes GET /auth/google et GET /auth/google/callback dans routes/web.php"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_03_sa_05",
+          "nom": "Vérification d'email",
+          "description": "Flux de vérification d'adresse email après inscription.",
+          "taches": [
+            {
+              "nom": "Activer la vérification d'email Breeze",
+              "Instructions": [
+                "Implémente MustVerifyEmail sur le modèle User",
+                "Vérifie que le middleware 'verified' est appliqué aux routes protégées dans routes/web.php"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action_04",
+      "nom": "Dashboard Utilisateur",
+      "type": "page",
+      "description": "Vue d'ensemble après connexion : solde, statistiques d'usage, accès rapide à l'achat de numéro et à l'historique.",
+      "sous_actions": [
+        {
+          "id": "action_04_sa_01",
+          "nom": "Header dashboard avec solde",
+          "description": "Affichage du solde en FCFA en permanence, bouton de recharge rapide.",
+          "taches": [
+            {
+              "nom": "Créer le composant solde",
+              "Instructions": [
+                "Crée resources/views/components/dashboard/balance-header.blade.php",
+                "Affiche {{ number_format(auth()->user()->balance, 0, ',', ' ') }} FCFA",
+                "Ajoute un bouton 'Recharger' pointant vers la route topup"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_04_sa_02",
+          "nom": "Cards de statistiques",
+          "description": "4 cards : numéros achetés, SMS reçus, solde actuel, dépense totale.",
+          "taches": [
+            {
+              "nom": "Créer le composant stats-cards",
+              "Instructions": [
+                "Crée resources/views/components/dashboard/stats-cards.blade.php",
+                "Prévoit 4 emplacements de cards : numéros achetés, SMS reçus, solde actuel, dépense totale",
+                "Recherche des cards animées sur uiverse.io cohérentes avec la palette et intègre-les si compatibles"
+              ]
+            },
+            {
+              "nom": "Créer la récupération des statistiques",
+              "Instructions": [
+                "Crée app/Http/Controllers/DashboardController.php si non existant",
+                "Ajoute une méthode index() qui calcule les 4 statistiques depuis les tables orders et transactions"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_04_sa_03",
+          "nom": "Graphique d'activité",
+          "description": "Graphique (Chart.js) de l'usage/dépenses sur les 30 derniers jours.",
+          "taches": [
+            {
+              "nom": "Préparer les données du graphique",
+              "Instructions": [
+                "Dans DashboardController, ajoute une méthode privée getActivityChartData() regroupant les dépenses par jour sur 30 jours"
+              ]
+            },
+            {
+              "nom": "Intégrer Chart.js",
+              "Instructions": [
+                "Crée resources/views/components/dashboard/activity-chart.blade.php",
+                "Initialise un graphique en ligne avec les données passées en JSON depuis le contrôleur"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_04_sa_04",
+          "nom": "Bloc achat rapide",
+          "description": "Raccourci vers la sélection service/pays sans quitter le dashboard.",
+          "taches": [
+            {
+              "nom": "Créer le composant achat rapide",
+              "Instructions": [
+                "Crée resources/views/components/dashboard/quick-buy.blade.php",
+                "Ajoute un mini-formulaire (select service, select pays) redirigeant vers la page d'achat avec les paramètres pré-remplis"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_04_sa_05",
+          "nom": "Mini-tableau dernières transactions",
+          "description": "5 dernières transactions (numéro, service, statut) avec lien vers l'historique complet.",
+          "taches": [
+            {
+              "nom": "Créer le composant mini-tableau",
+              "Instructions": [
+                "Crée resources/views/components/dashboard/recent-transactions.blade.php",
+                "Affiche les 5 dernières commandes (numéro, service, statut)",
+                "Ajoute un lien 'Voir tout' vers la route history"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_04_sa_06",
+          "nom": "Notifications récentes",
+          "description": "Liste déroulante des dernières notifications (SMS reçu, recharge confirmée).",
+          "taches": [
+            {
+              "nom": "Activer les notifications Laravel",
+              "Instructions": [
+                "Exécute: php artisan notifications:table",
+                "Exécute: php artisan migrate"
+              ]
+            },
+            {
+              "nom": "Créer le composant dropdown notifications",
+              "Instructions": [
+                "Crée resources/views/components/dashboard/notifications-dropdown.blade.php",
+                "Utilise Alpine.js pour l'ouverture/fermeture",
+                "Affiche auth()->user()->unreadNotifications avec un badge de compteur"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action_05",
+      "nom": "Achat de Numéro Virtuel",
+      "type": "page",
+      "description": "Sélection du service (WhatsApp, Google, etc.) et du pays, affichage du prix en FCFA, déclenchement de l'achat via l'API 5sim.",
+      "sous_actions": [
+        {
+          "id": "action_05_sa_01",
+          "nom": "Sélecteur de service",
+          "description": "Grille ou liste recherchable des services (avec icônes Font Awesome/logos).",
+          "taches": [
+            {
+              "nom": "Créer l'endpoint de récupération des services",
+              "Instructions": [
+                "Dans FiveSimService, crée une méthode getProducts($country, $operator) qui appelle GET /guest/products/{country}/{operator}",
+                "Crée une route API GET /api/services retournant la liste formatée"
+              ]
+            },
+            {
+              "nom": "Créer le composant sélecteur de service",
+              "Instructions": [
+                "Crée resources/views/components/purchase/service-selector.blade.php",
+                "Affiche une grille/liste recherchable (Alpine.js x-model pour le filtre texte) avec icônes Font Awesome ou logos"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_05_sa_02",
+          "nom": "Sélecteur de pays",
+          "description": "Dropdown avec drapeaux, recherche, tri par disponibilité/prix.",
+          "taches": [
+            {
+              "nom": "Créer l'endpoint de récupération des pays",
+              "Instructions": [
+                "Ajoute une méthode getCountries() dans FiveSimService",
+                "Crée une route API GET /api/countries retournant la liste avec codes et noms"
+              ]
+            },
+            {
+              "nom": "Créer le composant sélecteur de pays",
+              "Instructions": [
+                "Crée resources/views/components/purchase/country-selector.blade.php",
+                "Affiche un dropdown avec drapeaux, champ de recherche Alpine.js"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_05_sa_03",
+          "nom": "Affichage du prix en temps réel",
+          "description": "Prix en FCFA calculé dynamiquement (prix 5sim + marge) selon le couple service/pays choisi.",
+          "taches": [
+            {
+              "nom": "Créer la logique de calcul du prix",
+              "Instructions": [
+                "Crée app/Services/PricingService.php avec une méthode calculatePrice($priceUsd) qui applique le taux de change et la marge configurés"
+              ]
+            },
+            {
+              "nom": "Créer l'endpoint de prix dynamique",
+              "Instructions": [
+                "Crée une route API GET /api/price?service=&country= qui retourne le prix final en FCFA",
+                "Appelle cet endpoint en Alpine.js (fetch) à chaque changement de service/pays"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_05_sa_04",
+          "nom": "Bouton d'achat + vérification solde",
+          "description": "Vérifie que le solde utilisateur est suffisant avant d'autoriser l'achat, sinon redirige vers la recharge.",
+          "taches": [
+            {
+              "nom": "Ajouter la vérification de solde côté serveur",
+              "Instructions": [
+                "Dans PurchaseController@store, vérifie que auth()->user()->balance >= prix avant d'appeler l'API 5sim",
+                "Si solde insuffisant, retourne une erreur avec redirection suggérée vers la route topup"
+              ]
+            },
+            {
+              "nom": "Créer le bouton d'achat",
+              "Instructions": [
+                "Ajoute le bouton dans resources/views/purchase/index.blade.php",
+                "Désactive-le (disabled) tant que service et pays ne sont pas sélectionnés (via Alpine.js)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_05_sa_05",
+          "nom": "Popup de confirmation d'achat",
+          "description": "Modal récapitulative avant validation finale de l'achat.",
+          "taches": [
+            {
+              "nom": "Créer la modal de confirmation",
+              "Instructions": [
+                "Crée resources/views/components/purchase/confirm-modal.blade.php",
+                "Utilise Alpine.js (x-show, x-transition) pour l'affichage",
+                "Affiche le récapitulatif service/pays/prix avant validation finale"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action_06",
+      "nom": "Réception SMS en Temps Réel",
+      "type": "page",
+      "description": "Écran d'attente après achat : polling du statut, affichage du code SMS dès réception, actions annuler/relancer.",
+      "sous_actions": [
+        {
+          "id": "action_06_sa_01",
+          "nom": "Écran d'attente avec timer",
+          "description": "Countdown visuel de la durée de validité du numéro (5-20 min selon 5sim).",
+          "taches": [
+            {
+              "nom": "Créer la vue d'attente",
+              "Instructions": [
+                "Crée resources/views/purchase/waiting.blade.php",
+                "Ajoute un countdown Alpine.js basé sur la durée de validité renvoyée par l'API 5sim (champ expires)"
+              ]
+            },
+            {
+              "nom": "Créer le composant timer visuel",
+              "Instructions": [
+                "Crée resources/views/components/purchase/countdown-timer.blade.php",
+                "Recherche un loader/timer animé sur uiverse.io cohérent avec la palette, sinon garde un composant Tailwind simple"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_06_sa_02",
+          "nom": "Affichage du numéro attribué",
+          "description": "Numéro complet affiché avec bouton copier.",
+          "taches": [
+            {
+              "nom": "Afficher le numéro attribué",
+              "Instructions": [
+                "Dans waiting.blade.php, affiche le champ 'phone' retourné par l'achat 5sim",
+                "Ajoute un bouton copier utilisant navigator.clipboard.writeText() en Alpine.js"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_06_sa_03",
+          "nom": "Zone d'affichage du code SMS",
+          "description": "Bloc mis à jour automatiquement (polling) dès réception du SMS, avec bouton copier le code.",
+          "taches": [
+            {
+              "nom": "Créer le mécanisme de polling",
+              "Instructions": [
+                "Dans FiveSimService, crée une méthode checkOrder($id) qui appelle GET /user/check/{id}",
+                "Crée une route API GET /api/orders/{id}/status utilisée par le polling frontend"
+              ]
+            },
+            {
+              "nom": "Créer la zone d'affichage du code SMS",
+              "Instructions": [
+                "En Alpine.js, appelle l'endpoint /api/orders/{id}/status toutes les 5 secondes avec setInterval",
+                "Dès qu'un SMS est présent dans la réponse, affiche le code et arrête le polling",
+                "Ajoute un bouton copier pour le code SMS reçu"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_06_sa_04",
+          "nom": "Bouton annuler",
+          "description": "Annule la commande via l'API 5sim et rembourse le solde si éligible.",
+          "taches": [
+            {
+              "nom": "Créer l'action d'annulation",
+              "Instructions": [
+                "Dans FiveSimService, crée une méthode cancelOrder($id) qui appelle GET /user/cancel/{id}",
+                "Crée une route POST /orders/{id}/cancel qui rembourse le solde utilisateur si l'annulation est acceptée par 5sim"
+              ]
+            },
+            {
+              "nom": "Ajouter le bouton annuler dans la vue",
+              "Instructions": [
+                "Ajoute un bouton 'Annuler' dans waiting.blade.php appelant la route de cancel via fetch en Alpine.js",
+                "Redirige vers le dashboard après annulation confirmée"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_06_sa_05",
+          "nom": "Bouton relancer / nouveau numéro",
+          "description": "Permet de réessayer avec un autre pays si le SMS n'arrive pas.",
+          "taches": [
+            {
+              "nom": "Créer l'action relancer",
+              "Instructions": [
+                "Ajoute un bouton 'Essayer un autre pays' redirigeant vers la page d'achat avec le même service pré-sélectionné"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_06_sa_06",
+          "nom": "État d'erreur",
+          "description": "Message clair si le SMS n'arrive pas dans le délai, avec proposition de non-facturation.",
+          "taches": [
+            {
+              "nom": "Gérer l'état d'erreur / timeout",
+              "Instructions": [
+                "Dans le polling Alpine.js, détecte l'expiration du timer sans SMS reçu",
+                "Affiche un message clair 'SMS non reçu' avec proposition d'annulation/remboursement selon la politique 5sim"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action_07",
+      "nom": "Recharge de Solde (Mobile Money)",
+      "type": "page",
+      "description": "Interface de rechargement du solde utilisateur via Orange Money, Wave, MTN MoMo, Moov Money.",
+      "sous_actions": [
+        {
+          "id": "action_07_sa_01",
+          "nom": "Sélecteur de montant",
+          "description": "Boutons de montants prédéfinis + champ de saisie libre (minimum 500 FCFA).",
+          "taches": [
+            {
+              "nom": "Créer la vue de recharge",
+              "Instructions": [
+                "Crée resources/views/topup/index.blade.php",
+                "Ajoute des boutons de montants prédéfinis (1000, 2500, 5000, 10000 FCFA) et un champ libre avec validation min 500 FCFA en Alpine.js"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_07_sa_02",
+          "nom": "Sélecteur d'opérateur Mobile Money",
+          "description": "Choix entre Orange Money, Wave, MTN MoMo, Moov Money avec logos.",
+          "taches": [
+            {
+              "nom": "Créer le sélecteur d'opérateur",
+              "Instructions": [
+                "Crée resources/views/components/topup/operator-selector.blade.php",
+                "Affiche les logos Orange Money, Wave, MTN MoMo, Moov Money avec sélection via Alpine.js x-model"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_07_sa_03",
+          "nom": "Formulaire de paiement",
+          "description": "Saisie du numéro de téléphone lié à l'opérateur choisi, validation du paiement.",
+          "taches": [
+            {
+              "nom": "Intégrer l'agrégateur Mobile Money",
+              "Instructions": [
+                "Installe le SDK/HTTP client de l'agrégateur choisi (ex: composer require cinetpay/cinetpay-php ou appel HTTP direct)",
+                "Crée app/Services/Payment/MobileMoneyService.php encapsulant l'appel d'initialisation de paiement"
+              ]
+            },
+            {
+              "nom": "Créer le contrôleur de recharge",
+              "Instructions": [
+                "Crée app/Http/Controllers/TopupController.php avec une méthode store() qui appelle MobileMoneyService",
+                "Crée la route POST /topup dans routes/web.php"
+              ]
+            },
+            {
+              "nom": "Créer le formulaire de saisie du numéro",
+              "Instructions": [
+                "Ajoute un champ numéro de téléphone dans topup/index.blade.php avec validation du format selon l'opérateur choisi"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_07_sa_04",
+          "nom": "Popup statut de paiement",
+          "description": "Modal de suivi en temps réel (en attente / confirmé / échoué).",
+          "taches": [
+            {
+              "nom": "Créer le webhook de confirmation de paiement",
+              "Instructions": [
+                "Crée une route POST /webhooks/mobile-money pointant vers app/Http/Controllers/Webhooks/MobileMoneyWebhookController.php",
+                "Dans le contrôleur, vérifie la signature du webhook puis crédite le solde utilisateur si le paiement est confirmé"
+              ]
+            },
+            {
+              "nom": "Créer la popup de statut",
+              "Instructions": [
+                "Crée resources/views/components/topup/status-modal.blade.php",
+                "Utilise Alpine.js avec polling léger sur GET /api/topup/{id}/status pour afficher en attente/confirmé/échoué"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_07_sa_05",
+          "nom": "Mini-historique des recharges",
+          "description": "Dernières recharges affichées directement sur la page.",
+          "taches": [
+            {
+              "nom": "Créer le mini-historique des recharges",
+              "Instructions": [
+                "Dans TopupController@index, récupère les 5 dernières recharges de l'utilisateur",
+                "Affiche-les dans un composant resources/views/components/topup/recent-topups.blade.php"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action_08",
+      "nom": "Historique des Transactions & Numéros",
+      "type": "page",
+      "description": "Liste paginée des numéros achetés, statut, SMS reçus, et historique des recharges.",
+      "sous_actions": [
+        {
+          "id": "action_08_sa_01",
+          "nom": "Tableau des numéros achetés",
+          "description": "Colonnes : date, service, pays, numéro, statut, SMS reçu.",
+          "taches": [
+            {
+              "nom": "Créer le contrôleur d'historique",
+              "Instructions": [
+                "Crée app/Http/Controllers/HistoryController.php avec une méthode orders() listant les commandes de l'utilisateur",
+                "Crée la route GET /history/orders"
+              ]
+            },
+            {
+              "nom": "Créer le tableau des numéros achetés",
+              "Instructions": [
+                "Crée resources/views/history/orders.blade.php",
+                "Affiche les colonnes: date, service, pays, numéro, statut, SMS reçu"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_08_sa_02",
+          "nom": "Tableau des recharges",
+          "description": "Colonnes : date, montant, opérateur, statut.",
+          "taches": [
+            {
+              "nom": "Créer le tableau des recharges",
+              "Instructions": [
+                "Ajoute une méthode topups() dans HistoryController listant les recharges de l'utilisateur",
+                "Crée resources/views/history/topups.blade.php avec les colonnes: date, montant, opérateur, statut"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_08_sa_03",
+          "nom": "Filtres",
+          "description": "Filtrage par date, service, statut sur les deux tableaux.",
+          "taches": [
+            {
+              "nom": "Ajouter les filtres",
+              "Instructions": [
+                "Ajoute des paramètres de requête (date_from, date_to, service, status) dans les méthodes du HistoryController",
+                "Ajoute un formulaire de filtre en haut de chaque tableau utilisant GET pour préserver l'état dans l'URL"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_08_sa_04",
+          "nom": "Pagination",
+          "description": "Pagination côté serveur pour les deux tableaux.",
+          "taches": [
+            {
+              "nom": "Ajouter la pagination",
+              "Instructions": [
+                "Utilise ->paginate(20) sur les requêtes Eloquent dans HistoryController",
+                "Ajoute {{ $orders->links() }} dans les vues Blade correspondantes"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_08_sa_05",
+          "nom": "Export CSV (optionnel)",
+          "description": "Export de l'historique filtré au format CSV.",
+          "taches": [
+            {
+              "nom": "Ajouter l'export CSV (optionnel)",
+              "Instructions": [
+                "Crée une méthode exportCsv() dans HistoryController générant un fichier CSV à partir des données filtrées",
+                "Ajoute un bouton 'Exporter' déclenchant le téléchargement via une route GET /history/export"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action_09",
+      "nom": "Page Tarifs Publique",
+      "type": "page",
+      "description": "Grille de tarifs publics par service/pays, mise à jour dynamique depuis les prix 5sim + marge.",
+      "sous_actions": [
+        {
+          "id": "action_09_sa_01",
+          "nom": "Sélecteur de filtre pays/service",
+          "description": "Filtre dynamique pour explorer les tarifs sans quitter la page.",
+          "taches": [
+            {
+              "nom": "Créer le contrôleur de tarifs",
+              "Instructions": [
+                "Crée app/Http/Controllers/PricingController.php avec une méthode index()",
+                "Crée la route GET /tarifs pointant vers cette méthode"
+              ]
+            },
+            {
+              "nom": "Créer le sélecteur de filtre",
+              "Instructions": [
+                "Crée resources/views/components/pricing/filter.blade.php",
+                "Ajoute des selects pays/service en Alpine.js qui déclenchent un fetch vers /api/price"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_09_sa_02",
+          "nom": "Tableau de tarifs",
+          "description": "Tableau paginé/scrollable service x pays x prix FCFA.",
+          "taches": [
+            {
+              "nom": "Créer le tableau de tarifs",
+              "Instructions": [
+                "Crée resources/views/pricing/index.blade.php",
+                "Affiche un tableau service x pays x prix FCFA, alimenté par PricingService::calculatePrice()",
+                "Ajoute un cache (Cache::remember) de courte durée pour limiter les appels à l'API 5sim"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_09_sa_03",
+          "nom": "Bloc explicatif",
+          "description": "Rappel rapide du fonctionnement (numéro loué 5-20 min, SMS affiché en direct).",
+          "taches": [
+            {
+              "nom": "Créer le bloc explicatif",
+              "Instructions": [
+                "Ajoute un bloc de texte dans pricing/index.blade.php rappelant le fonctionnement (numéro loué 5-20 min, SMS affiché en direct)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_09_sa_04",
+          "nom": "CTA inscription",
+          "description": "Bouton d'appel à l'action vers la création de compte.",
+          "taches": [
+            {
+              "nom": "Ajouter le CTA inscription",
+              "Instructions": [
+                "Ajoute un bouton en bas de page pointant vers la route register, visible uniquement si l'utilisateur n'est pas connecté"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action_10",
+      "nom": "Panel d'Administration",
+      "type": "page",
+      "description": "Gestion des utilisateurs, des marges, des transactions, statistiques globales, support des tickets.",
+      "sous_actions": [
+        {
+          "id": "action_10_sa_01",
+          "nom": "Cards de statistiques globales",
+          "description": "Utilisateurs actifs, chiffre d'affaires, nombre de transactions, marge moyenne.",
+          "taches": [
+            {
+              "nom": "Sécuriser l'accès admin",
+              "Instructions": [
+                "Ajoute une colonne is_admin (boolean) à la table users via une migration",
+                "Crée un middleware app/Http/Middleware/EnsureUserIsAdmin.php et applique-le au groupe de routes admin"
+              ]
+            },
+            {
+              "nom": "Créer les cards de statistiques globales",
+              "Instructions": [
+                "Crée app/Http/Controllers/Admin/DashboardController.php",
+                "Calcule utilisateurs actifs, chiffre d'affaires, nombre de transactions, marge moyenne",
+                "Crée resources/views/admin/dashboard.blade.php avec les 4 cards"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_10_sa_02",
+          "nom": "Tableau de gestion des utilisateurs",
+          "description": "Liste des utilisateurs avec actions (suspendre, créditer, voir détail).",
+          "taches": [
+            {
+              "nom": "Créer la gestion des utilisateurs",
+              "Instructions": [
+                "Crée app/Http/Controllers/Admin/UserController.php avec index(), suspend(), credit()",
+                "Crée resources/views/admin/users/index.blade.php avec tableau paginé et actions (suspendre, créditer, voir détail)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_10_sa_03",
+          "nom": "Gestion de la marge",
+          "description": "Interface de configuration du pourcentage de marge global ou par pays/service.",
+          "taches": [
+            {
+              "nom": "Créer la gestion de la marge",
+              "Instructions": [
+                "Crée une table settings (clé/valeur) via migration pour stocker la marge globale et les marges par pays/service",
+                "Crée app/Http/Controllers/Admin/SettingsController.php avec une méthode updateMargin()",
+                "Crée resources/views/admin/settings/margin.blade.php avec le formulaire de configuration"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_10_sa_04",
+          "nom": "Tableau des transactions globales",
+          "description": "Vue admin de toutes les transactions (achats + recharges) avec filtres avancés.",
+          "taches": [
+            {
+              "nom": "Créer le tableau des transactions globales",
+              "Instructions": [
+                "Crée une méthode transactions() dans un contrôleur Admin dédié listant achats et recharges de tous les utilisateurs",
+                "Crée resources/views/admin/transactions/index.blade.php avec filtres avancés (utilisateur, date, statut, type)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_10_sa_05",
+          "nom": "Gestion des tickets support",
+          "description": "Liste et traitement des demandes de support envoyées via le formulaire de contact.",
+          "taches": [
+            {
+              "nom": "Créer la gestion des tickets support",
+              "Instructions": [
+                "Crée une migration pour la table support_tickets (colonnes: id, user_id, sujet, message, statut, created_at)",
+                "Crée app/Http/Controllers/Admin/SupportTicketController.php avec index() et updateStatus()",
+                "Crée resources/views/admin/support/index.blade.php"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_10_sa_06",
+          "nom": "Graphiques de revenus",
+          "description": "Visualisation (Chart.js) de l'évolution du chiffre d'affaires et de la marge dans le temps.",
+          "taches": [
+            {
+              "nom": "Créer les graphiques de revenus",
+              "Instructions": [
+                "Ajoute une méthode getRevenueChartData() regroupant le chiffre d'affaires et la marge par jour/mois",
+                "Intègre Chart.js dans resources/views/admin/dashboard.blade.php pour visualiser l'évolution"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action_11",
+      "nom": "Intégration API 5sim (Service Backend)",
+      "type": "backend",
+      "description": "Couche de service isolée encapsulant tous les appels à l'API 5sim (achat, vérification, annulation, réception SMS).",
+      "sous_actions": [
+        {
+          "id": "action_11_sa_01",
+          "nom": "Classe FiveSimService",
+          "description": "Wrapper HTTP centralisant l'authentification et les appels vers https://5sim.net/v1.",
+          "taches": [
+            {
+              "nom": "Finaliser la classe FiveSimService",
+              "Instructions": [
+                "Ouvre app/Services/FiveSim/FiveSimService.php créé en action_01",
+                "Implémente le constructeur avec baseUrl et apiKey issus de config('fivesim')",
+                "Implémente la méthode privée request($method, $endpoint, $params = []) centralisant Http::withToken($this->apiKey)->baseUrl($this->baseUrl)"
+              ]
+            },
+            {
+              "nom": "Ajouter la journalisation des appels",
+              "Instructions": [
+                "Ajoute un Log::info() ou Log::error() dans la méthode request() pour tracer les appels et erreurs vers 5sim (utile en debug production)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_11_sa_02",
+          "nom": "Récupération des produits/prix",
+          "description": "Méthode de récupération des prix par pays/opérateur/service, avec mise en cache.",
+          "taches": [
+            {
+              "nom": "Implémenter getProducts()",
+              "Instructions": [
+                "Réfère-toi à https://5sim.net/docs#user pour le schéma exact de GET /guest/products/{country}/{operator}",
+                "Implémente la méthode getProducts($country, $operator = 'any') dans FiveSimService",
+                "Ajoute une mise en cache (Cache::remember, 5 minutes) pour limiter les appels répétés"
+              ]
+            },
+            {
+              "nom": "Implémenter getCountries()",
+              "Instructions": [
+                "Implémente la méthode getCountries() appelant l'endpoint approprié documenté sur 5sim.net/docs#user",
+                "Mets également cette réponse en cache"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_11_sa_03",
+          "nom": "Achat d'activation",
+          "description": "Méthode d'achat d'un numéro (endpoint /user/buy/activation).",
+          "taches": [
+            {
+              "nom": "Implémenter buyActivation()",
+              "Instructions": [
+                "Implémente la méthode buyActivation($country, $operator, $product) appelant GET /user/buy/activation/{country}/{operator}/{product}",
+                "Retourne l'objet commande (id, phone, price, expires) au contrôleur PurchaseController"
+              ]
+            },
+            {
+              "nom": "Enregistrer la commande en base",
+              "Instructions": [
+                "Crée une migration pour la table orders (colonnes: id, user_id, fivesim_order_id, service, country, phone, price_fcfa, status, sms_code, created_at)",
+                "Dans PurchaseController@store, enregistre la commande retournée par buyActivation() dans la table orders"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_11_sa_04",
+          "nom": "Vérification statut & SMS",
+          "description": "Méthode de polling du statut et de récupération du SMS reçu.",
+          "taches": [
+            {
+              "nom": "Implémenter checkOrder()",
+              "Instructions": [
+                "Implémente la méthode checkOrder($id) appelant GET /user/check/{id}",
+                "Mets à jour le statut et le code SMS de la commande correspondante dans la table orders"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_11_sa_05",
+          "nom": "Annulation / finalisation",
+          "description": "Méthodes d'annulation (/user/cancel) et de finalisation (/user/finish) d'une commande.",
+          "taches": [
+            {
+              "nom": "Implémenter cancelOrder() et finishOrder()",
+              "Instructions": [
+                "Implémente cancelOrder($id) appelant GET /user/cancel/{id} et finishOrder($id) appelant GET /user/finish/{id}",
+                "Dans finishOrder(), marque la commande comme terminée définitivement en base (n'autorise plus l'annulation/remboursement après ce point)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_11_sa_06",
+          "nom": "Gestion des erreurs & retry",
+          "description": "Stratégie de gestion des erreurs API (solde 5sim insuffisant, numéro indisponible, timeout) avec retry contrôlé.",
+          "taches": [
+            {
+              "nom": "Gérer les erreurs API 5sim",
+              "Instructions": [
+                "Crée une exception personnalisée app/Exceptions/FiveSimException.php",
+                "Dans request(), lève cette exception avec le message d'erreur 5sim si le statut HTTP n'est pas 2xx (ex: solde 5sim insuffisant, numéro indisponible)"
+              ]
+            },
+            {
+              "nom": "Ajouter une stratégie de retry",
+              "Instructions": [
+                "Utilise Http::retry(2, 200) sur les appels critiques (achat, vérification) pour absorber les erreurs réseau transitoires",
+                "Ne retry jamais un achat déjà facturé pour éviter un double débit"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action_12",
+      "nom": "Notifications",
+      "type": "backend",
+      "description": "Notifications email et in-app pour recharge confirmée, SMS reçu, échec de transaction.",
+      "sous_actions": [
+        {
+          "id": "action_12_sa_01",
+          "nom": "Notification email recharge confirmée",
+          "description": "Envoi asynchrone (queue) d'un email de confirmation après recharge réussie.",
+          "taches": [
+            {
+              "nom": "Créer la notification email de recharge",
+              "Instructions": [
+                "Exécute: php artisan make:notification TopupConfirmed",
+                "Implémente la méthode toMail() avec le montant crédité et le nouveau solde",
+                "Déclenche $user->notify(new TopupConfirmed($topup)) dans le webhook Mobile Money une fois le paiement confirmé"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_12_sa_02",
+          "nom": "Notification SMS reçu (optionnel)",
+          "description": "Notification (email et/ou in-app) lorsque le code SMS est reçu.",
+          "taches": [
+            {
+              "nom": "Créer la notification SMS reçu (optionnel)",
+              "Instructions": [
+                "Exécute: php artisan make:notification SmsReceived",
+                "Déclenche cette notification dans checkOrder() dès qu'un code SMS est détecté pour la première fois"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_12_sa_03",
+          "nom": "Notifications in-app",
+          "description": "Système de cloche de notifications dans le header avec badge non-lues.",
+          "taches": [
+            {
+              "nom": "Finaliser les notifications in-app",
+              "Instructions": [
+                "Vérifie que le trait Notifiable est bien présent sur le modèle User",
+                "Assure-toi que le composant notifications-dropdown.blade.php (créé en action_04) lit bien auth()->user()->unreadNotifications"
+              ]
+            },
+            {
+              "nom": "Ajouter le marquage comme lu",
+              "Instructions": [
+                "Crée une route POST /notifications/{id}/read",
+                "Appelle cette route en Alpine.js au clic sur une notification pour appeler ->markAsRead()"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_12_sa_04",
+          "nom": "File d'attente pour l'envoi asynchrone",
+          "description": "Configuration des jobs Laravel pour ne jamais bloquer l'utilisateur pendant l'envoi.",
+          "taches": [
+            {
+              "nom": "Passer les notifications en file d'attente",
+              "Instructions": [
+                "Implémente ShouldQueue sur les classes TopupConfirmed et SmsReceived",
+                "Vérifie que php artisan queue:work tourne en continu (ou configure Supervisor en production)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action_13",
+      "nom": "Pages Légales & Support",
+      "type": "page",
+      "description": "CGV, mentions légales, politique de confidentialité, FAQ, page de contact.",
+      "sous_actions": [
+        {
+          "id": "action_13_sa_01",
+          "nom": "Page CGV",
+          "description": "Conditions générales de vente, incluant la politique de remboursement en cas de SMS non reçu.",
+          "taches": [
+            {
+              "nom": "Créer la page CGV",
+              "Instructions": [
+                "Crée resources/views/legal/cgv.blade.php",
+                "Rédige les sections: objet du service, modalités de paiement, politique de remboursement en cas de SMS non reçu, responsabilités",
+                "Ajoute la route GET /cgv dans routes/web.php"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_13_sa_02",
+          "nom": "Page Mentions légales",
+          "description": "Informations légales de l'éditeur du site.",
+          "taches": [
+            {
+              "nom": "Créer la page Mentions légales",
+              "Instructions": [
+                "Crée resources/views/legal/mentions-legales.blade.php avec les informations de l'éditeur du site",
+                "Ajoute la route GET /mentions-legales"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_13_sa_03",
+          "nom": "Page Politique de confidentialité",
+          "description": "Traitement des données personnelles et paiement.",
+          "taches": [
+            {
+              "nom": "Créer la page Politique de confidentialité",
+              "Instructions": [
+                "Crée resources/views/legal/confidentialite.blade.php décrivant le traitement des données personnelles et de paiement",
+                "Ajoute la route GET /confidentialite"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_13_sa_04",
+          "nom": "Page FAQ complète",
+          "description": "Toutes les questions fréquentes en accordéon, organisées par catégorie.",
+          "taches": [
+            {
+              "nom": "Créer la page FAQ complète",
+              "Instructions": [
+                "Crée resources/views/faq.blade.php",
+                "Organise les questions par catégorie (Compte, Paiement, Numéros/SMS, Remboursement) avec accordéon Alpine.js",
+                "Ajoute la route GET /faq"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "action_13_sa_05",
+          "nom": "Formulaire de contact",
+          "description": "Formulaire envoyant un ticket vers le panel d'administration.",
+          "taches": [
+            {
+              "nom": "Créer le formulaire de contact",
+              "Instructions": [
+                "Crée resources/views/contact.blade.php avec champs nom, email, sujet, message",
+                "Crée app/Http/Controllers/ContactController.php qui enregistre le message dans la table support_tickets (créée en action_10)",
+                "Ajoute la route GET /contact et POST /contact"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
