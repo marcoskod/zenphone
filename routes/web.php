@@ -14,6 +14,13 @@ Route::view('/tarifs', 'pages.coming-soon', [
     'icon' => 'fa-tags',
 ])->name('pricing');
 
+// TODO(action_13): replace with the full FAQ page, organized by category.
+Route::view('/faq', 'pages.coming-soon', [
+    'title' => 'Foire aux questions',
+    'message' => 'La FAQ complète, organisée par catégorie, arrive très prochainement.',
+    'icon' => 'fa-circle-question',
+])->name('faq');
+
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
