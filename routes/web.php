@@ -21,6 +21,31 @@ Route::view('/faq', 'pages.coming-soon', [
     'icon' => 'fa-circle-question',
 ])->name('faq');
 
+// TODO(action_13): replace with the real CGV page (incl. refund policy for undelivered SMS).
+Route::view('/cgv', 'pages.coming-soon', [
+    'title' => 'Conditions générales de vente',
+    'icon' => 'fa-file-contract',
+])->name('cgv');
+
+// TODO(action_13): replace with the real mentions légales page.
+Route::view('/mentions-legales', 'pages.coming-soon', [
+    'title' => 'Mentions légales',
+    'icon' => 'fa-scale-balanced',
+])->name('mentions-legales');
+
+// TODO(action_13): replace with the real politique de confidentialité page.
+Route::view('/confidentialite', 'pages.coming-soon', [
+    'title' => 'Politique de confidentialité',
+    'icon' => 'fa-user-shield',
+])->name('confidentialite');
+
+// TODO(action_13): replace with the real contact form (ContactController, support_tickets).
+Route::view('/contact', 'pages.coming-soon', [
+    'title' => 'Contact',
+    'message' => "Le formulaire de contact arrive très prochainement. En attendant, écrivez-nous à contact@zensms.example.",
+    'icon' => 'fa-envelope',
+])->name('contact');
+
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
