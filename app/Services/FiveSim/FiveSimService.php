@@ -92,14 +92,21 @@ class FiveSimService implements FiveSimServiceInterface
             ->acceptJson();
 
         if ($retryable) {
-            // Http::retry() only re-attempts the request when a connection-level exception
-            // (timeout, DNS failure, connection refused, ...) is thrown while sending it —
-            // it does NOT retry on a normal non-2xx HTTP response, since we never call
-            // ->throw() on the response below. That distinction is intentional: an order
-            // endpoint like buyActivation() may have already billed the 5sim account by the
-            // time a definitive error response comes back, so auto-retrying that case could
-            // risk a double charge. Only transient network failures are retried here.
-            $pendingRequest = $pendingRequest->retry(2, 200);
+            // By default Laravel's retry() re-attempts on ANY failed response (not just
+            // connection errors) and throws once retries are exhausted — both wrong here:
+            // an order endpoint like buyActivation() may have already billed the 5sim
+            // account by the time a definitive error response comes back, so auto-retrying
+            // that case risks a double charge. The `when` callback restricts retries to
+            // genuine connection-level failures (timeout, DNS failure, connection refused,
+            // ...), and `throw: false` stops it from auto-throwing on a definitive non-2xx
+            // response; that case falls through to the $response->failed() check below,
+            // as a single attempt, and is turned into a FiveSimException there instead.
+            $pendingRequest = $pendingRequest->retry(
+                times: 2,
+                sleepMilliseconds: 200,
+                when: fn (\Throwable $exception) => $exception instanceof ConnectionException,
+                throw: false,
+            );
         }
 
         try {
