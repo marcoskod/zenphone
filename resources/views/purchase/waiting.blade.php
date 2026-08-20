@@ -46,15 +46,25 @@
             </div>
 
             <div x-show="!smsCode" x-cloak class="flex flex-col items-center gap-3">
-                <button
-                    type="button"
-                    @click="cancelOrder()"
-                    :disabled="cancelling"
-                    class="inline-flex items-center gap-2 rounded-full border border-error/30 px-5 py-2 text-sm font-medium text-error transition hover:bg-error/5 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                    <i class="fa-solid fa-xmark"></i>
-                    <span x-text="cancelling ? 'Annulation...' : 'Annuler la commande'"></span>
-                </button>
+                <div class="flex flex-wrap items-center justify-center gap-3">
+                    <button
+                        type="button"
+                        @click="cancelOrder()"
+                        :disabled="cancelling"
+                        class="inline-flex items-center gap-2 rounded-full border border-error/30 px-5 py-2 text-sm font-medium text-error transition hover:bg-error/5 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                        <span x-text="cancelling ? 'Annulation...' : 'Annuler la commande'"></span>
+                    </button>
+
+                    <a
+                        href="{{ route('purchase') }}?service={{ $order->service }}"
+                        class="inline-flex items-center gap-2 rounded-full border border-slate-300 px-5 py-2 text-sm font-medium text-secondary transition hover:bg-slate-50 dark:border-slate-700 dark:text-light dark:hover:bg-slate-800"
+                    >
+                        <i class="fa-solid fa-rotate-right"></i>
+                        Essayer un autre pays
+                    </a>
+                </div>
 
                 <p x-show="cancelError" x-cloak class="text-sm text-error" x-text="cancelError"></p>
             </div>
