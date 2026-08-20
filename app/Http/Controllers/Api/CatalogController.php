@@ -45,4 +45,33 @@ class CatalogController extends Controller
 
         return response()->json(['data' => $services]);
     }
+
+    /**
+     * GET /api/countries - formatted country list, consumed by the country-selector
+     * component. FiveSimService::getCountries()'s exact response schema was not
+     * confirmed against the live 5sim docs (see FiveSimService's code comment), so this
+     * is defensive: it accepts either a "text_en"/"name" field per entry or falls back
+     * to titleizing the country slug itself.
+     */
+    public function countries(): JsonResponse
+    {
+        try {
+            $countries = $this->fiveSim->getCountries();
+        } catch (FiveSimException $e) {
+            return response()->json(['message' => $e->getMessage()], 502);
+        }
+
+        $formatted = collect($countries)
+            ->map(function ($details, $code) {
+                $name = is_array($details) ? ($details['text_en'] ?? $details['name'] ?? null) : null;
+
+                return [
+                    'code' => $code,
+                    'name' => $name ?? ucfirst(str_replace('_', ' ', $code)),
+                ];
+            })
+            ->values();
+
+        return response()->json(['data' => $formatted]);
+    }
 }
