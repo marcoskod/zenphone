@@ -291,6 +291,12 @@ Alpine.data('orderWaiting', (orderId, expiresAtIso, initialStatus = 'pending', i
         this.secondsRemaining = Math.max(0, Math.round((this.expiresAtTimestamp - Date.now()) / 1000));
         this.totalSeconds = this.secondsRemaining;
 
+        // Covers reloading an already-expired waiting page without waiting for the
+        // first 1-second tick to notice.
+        if (this.expired && !this.smsCode) {
+            this.timedOut = true;
+        }
+
         this.countdownInterval = setInterval(() => this.tickCountdown(), 1000);
 
         if (!this.smsCode && !this.expired) {

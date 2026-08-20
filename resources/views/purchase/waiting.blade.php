@@ -40,9 +40,15 @@
                 <x-purchase.countdown-timer />
             </div>
 
-            <div x-show="!smsCode" x-cloak class="flex items-center justify-center gap-2 text-sm text-secondary/60 dark:text-light/60">
+            <div x-show="!smsCode && !timedOut" x-cloak class="flex items-center justify-center gap-2 text-sm text-secondary/60 dark:text-light/60">
                 <i class="fa-solid fa-circle-notch fa-spin"></i>
                 En attente du SMS...
+            </div>
+
+            <div x-show="timedOut" x-cloak x-transition class="rounded-2xl border border-error/30 bg-error/5 p-4 text-center text-sm text-error">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                SMS non reçu avant l'expiration du numéro. Vous pouvez annuler cette commande pour être remboursé,
+                ou essayer un autre pays.
             </div>
 
             <div x-show="!smsCode" x-cloak class="flex flex-col items-center gap-3">
