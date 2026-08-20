@@ -22,7 +22,7 @@
                 datasets: [{
                     label: 'Dépenses (FCFA)',
                     data: @json($chartData['data']),
-                    borderColor: '#0EA5A4',
+                    borderColor: '#1F3569',
                     backgroundColor: 'rgba(14, 165, 164, 0.1)',
                     tension: 0.3,
                     fill: true,

@@ -17,9 +17,9 @@ export default {
                 sans: ['Inter', ...defaultTheme.fontFamily.sans],
             },
             colors: {
-                primary: '#0EA5A4',
+                primary: '#1F3569',
                 secondary: '#0F172A',
-                accent: '#F59E0B',
+                accent: '#D4A017',
                 light: '#F8FAFC',
                 success: '#22C55E',
                 error: '#EF4444',
