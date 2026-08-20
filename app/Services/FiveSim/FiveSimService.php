@@ -43,6 +43,16 @@ class FiveSimService implements FiveSimServiceInterface
         return $this->request('get', "/user/buy/activation/{$country}/{$operator}/{$product}");
     }
 
+    /**
+     * Calls GET /user/check/{id} (verified against 5sim docs: response includes
+     * id/status/expires/phone/product/price/country plus an "sms" array with
+     * created_at/date/sender/text/code once a message has arrived).
+     *
+     * This method only returns 5sim's raw response — it does not yet update the local
+     * Order row's status/sms_code. That sync is wired in by whichever controller ends up
+     * calling this for polling (action_05's purchase flow / action_06's SMS reception
+     * screen), not here, since no controller exists yet in this phase.
+     */
     public function checkOrder(int $id): array
     {
         return $this->request('get', "/user/check/{$id}");
