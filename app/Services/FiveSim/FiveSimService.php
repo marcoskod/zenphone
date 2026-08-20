@@ -58,11 +58,20 @@ class FiveSimService implements FiveSimServiceInterface
         return $this->request('get', "/user/check/{$id}");
     }
 
+    /**
+     * Calls GET /user/cancel/{id} (verified against 5sim docs: response is the order
+     * object with status "CANCELED"; documented error cases are "order not found",
+     * "order expired", "order has sms", "hosting order").
+     */
     public function cancelOrder(int $id): array
     {
         return $this->request('get', "/user/cancel/{$id}");
     }
 
+    /**
+     * Calls GET /user/finish/{id} (verified against 5sim docs: response is the order
+     * object with status "FINISHED"; no documented error cases for this endpoint).
+     */
     public function finishOrder(int $id): array
     {
         return $this->request('get', "/user/finish/{$id}");
