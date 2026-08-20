@@ -2,7 +2,10 @@
 
 namespace App\Services\FiveSim;
 
+use App\Exceptions\FiveSimException;
 use App\Services\FiveSim\Contracts\FiveSimServiceInterface;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -40,7 +43,7 @@ class FiveSimService implements FiveSimServiceInterface
 
     public function buyActivation(string $country, string $operator, string $product): array
     {
-        return $this->request('get', "/user/buy/activation/{$country}/{$operator}/{$product}");
+        return $this->request('get', "/user/buy/activation/{$country}/{$operator}/{$product}", retryable: true);
     }
 
     /**
@@ -55,7 +58,7 @@ class FiveSimService implements FiveSimServiceInterface
      */
     public function checkOrder(int $id): array
     {
-        return $this->request('get', "/user/check/{$id}");
+        return $this->request('get', "/user/check/{$id}", retryable: true);
     }
 
     /**
@@ -77,14 +80,42 @@ class FiveSimService implements FiveSimServiceInterface
         return $this->request('get', "/user/finish/{$id}");
     }
 
-    private function request(string $method, string $endpoint, array $params = []): array
+    /**
+     * @throws FiveSimException
+     */
+    private function request(string $method, string $endpoint, array $params = [], bool $retryable = false): array
     {
         Log::info('5sim API request', ['method' => $method, 'endpoint' => $endpoint]);
 
-        $response = Http::withToken($this->config['api_key'])
+        $pendingRequest = Http::withToken($this->config['api_key'])
             ->baseUrl($this->config['base_url'])
-            ->acceptJson()
-            ->{$method}($endpoint, $params);
+            ->acceptJson();
+
+        if ($retryable) {
+            // Http::retry() only re-attempts the request when a connection-level exception
+            // (timeout, DNS failure, connection refused, ...) is thrown while sending it —
+            // it does NOT retry on a normal non-2xx HTTP response, since we never call
+            // ->throw() on the response below. That distinction is intentional: an order
+            // endpoint like buyActivation() may have already billed the 5sim account by the
+            // time a definitive error response comes back, so auto-retrying that case could
+            // risk a double charge. Only transient network failures are retried here.
+            $pendingRequest = $pendingRequest->retry(2, 200);
+        }
+
+        try {
+            $response = $pendingRequest->{$method}($endpoint, $params);
+        } catch (ConnectionException $e) {
+            Log::error('5sim API connection error', [
+                'method' => $method,
+                'endpoint' => $endpoint,
+                'message' => $e->getMessage(),
+            ]);
+
+            throw new FiveSimException(
+                "Impossible de contacter 5sim : {$e->getMessage()}",
+                previous: $e,
+            );
+        }
 
         if ($response->failed()) {
             Log::error('5sim API error response', [
@@ -93,14 +124,34 @@ class FiveSimService implements FiveSimServiceInterface
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
-        } else {
-            Log::info('5sim API response', [
-                'method' => $method,
-                'endpoint' => $endpoint,
-                'status' => $response->status(),
-            ]);
+
+            throw new FiveSimException($this->extractErrorMessage($response), $response->status());
         }
 
+        Log::info('5sim API response', [
+            'method' => $method,
+            'endpoint' => $endpoint,
+            'status' => $response->status(),
+        ]);
+
         return $response->json() ?? [];
+    }
+
+    /**
+     * 5sim does not consistently wrap errors as JSON — some endpoints return a bare
+     * plain-text message instead. Prefer a JSON "error" field when present, otherwise
+     * fall back to the raw response body.
+     */
+    private function extractErrorMessage(Response $response): string
+    {
+        $json = $response->json();
+
+        if (is_array($json) && isset($json['error']) && is_string($json['error'])) {
+            return $json['error'];
+        }
+
+        $body = trim($response->body());
+
+        return $body !== '' ? $body : "Erreur 5sim (HTTP {$response->status()})";
     }
 }
