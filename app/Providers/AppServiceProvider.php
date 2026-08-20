@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\FiveSim\Contracts\FiveSimServiceInterface;
+use App\Services\FiveSim\FiveSimService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +13,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(FiveSimServiceInterface::class, function ($app) {
+            return new FiveSimService($app['config']['fivesim']);
+        });
     }
 
     /**
