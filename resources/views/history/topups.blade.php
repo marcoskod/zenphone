@@ -7,6 +7,8 @@
 
     <div class="py-12">
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
+            <x-history.tabs active="topups" />
+
             <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <form method="GET" action="{{ route('history.topups') }}" class="grid gap-3 sm:grid-cols-5">
                     <div>
