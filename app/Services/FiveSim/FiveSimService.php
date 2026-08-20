@@ -44,19 +44,28 @@ class FiveSimService implements FiveSimServiceInterface
 
     private function request(string $method, string $endpoint, array $params = []): array
     {
-        try {
-            $response = Http::withToken($this->config['api_key'])
-                ->baseUrl($this->config['base_url'])
-                ->{$method}($endpoint, $params);
+        Log::info('5sim API request', ['method' => $method, 'endpoint' => $endpoint]);
 
-            return $response->json() ?? [];
-        } catch (\Throwable $e) {
-            Log::error('5sim API request failed', [
+        $response = Http::withToken($this->config['api_key'])
+            ->baseUrl($this->config['base_url'])
+            ->acceptJson()
+            ->{$method}($endpoint, $params);
+
+        if ($response->failed()) {
+            Log::error('5sim API error response', [
+                'method' => $method,
                 'endpoint' => $endpoint,
-                'message' => $e->getMessage(),
+                'status' => $response->status(),
+                'body' => $response->body(),
             ]);
-
-            return [];
+        } else {
+            Log::info('5sim API response', [
+                'method' => $method,
+                'endpoint' => $endpoint,
+                'status' => $response->status(),
+            ]);
         }
+
+        return $response->json() ?? [];
     }
 }
