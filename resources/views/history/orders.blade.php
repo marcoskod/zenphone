@@ -46,8 +46,15 @@
             </div>
 
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div class="border-b border-slate-100 p-4 dark:border-slate-800">
+                <div class="flex items-center justify-between border-b border-slate-100 p-4 dark:border-slate-800">
                     <h3 class="text-sm font-semibold text-secondary dark:text-light">Mes numéros</h3>
+                    <a
+                        href="{{ route('history.export', request()->query()) }}"
+                        class="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-xs font-medium text-secondary transition hover:bg-slate-50 dark:border-slate-700 dark:text-light dark:hover:bg-slate-800"
+                    >
+                        <i class="fa-solid fa-download"></i>
+                        Exporter en CSV
+                    </a>
                 </div>
 
                 <div class="overflow-x-auto">

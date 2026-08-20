@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class HistoryController extends Controller
 {
@@ -24,6 +25,41 @@ class HistoryController extends Controller
             ->appends($request->query());
 
         return view('history.topups', ['topups' => $topups]);
+    }
+
+    /**
+     * GET /historique/export - the current filters (same query params as orders())
+     * apply here too, so exporting after filtering only downloads the filtered rows.
+     */
+    public function exportCsv(Request $request): StreamedResponse
+    {
+        $orders = $this->applyOrderFilters($request->user()->orders()->latest(), $request)->get();
+
+        $filename = 'commandes-'.now()->format('Y-m-d-His').'.csv';
+
+        $callback = function () use ($orders) {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, ['Date', 'Service', 'Pays', 'Numéro', 'Statut', 'SMS reçu', 'Prix (FCFA)']);
+
+            foreach ($orders as $order) {
+                fputcsv($handle, [
+                    $order->created_at->format('Y-m-d H:i'),
+                    $order->service,
+                    $order->country,
+                    $order->phone,
+                    $order->status,
+                    $order->sms_code ? 'Oui' : 'Non',
+                    $order->price_fcfa,
+                ]);
+            }
+
+            fclose($handle);
+        };
+
+        return response()->streamDownload($callback, $filename, [
+            'Content-Type' => 'text/csv',
+        ]);
     }
 
     private function applyOrderFilters(Builder $query, Request $request): Builder

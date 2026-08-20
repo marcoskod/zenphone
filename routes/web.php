@@ -76,6 +76,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/historique/commandes', [HistoryController::class, 'orders'])->name('history');
     Route::get('/historique/recharges', [HistoryController::class, 'topups'])->name('history.topups');
+    Route::get('/historique/export', [HistoryController::class, 'exportCsv'])->name('history.export');
 
     Route::prefix('api')->name('api.')->group(function () {
         Route::get('/services', [CatalogController::class, 'services'])->name('services');
