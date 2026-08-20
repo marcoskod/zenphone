@@ -1,13 +1,19 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController as ApiAuthController;
 use App\Http\Controllers\Api\CatalogController;
+use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\TopupController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'landing')->name('home');
+// Single-page homepage (modal/dialog-driven). The old multi-page landing view
+// (resources/views/landing.blade.php) and every route below it stay in the codebase,
+// untouched, as a secondary/fallback surface - only '/' itself was repointed.
+Route::view('/', 'home')->name('home');
 
 // TODO(action_09): replace with a real PricingController-backed page.
 Route::view('/tarifs', 'pages.coming-soon', [
@@ -77,12 +83,25 @@ Route::middleware('auth')->group(function () {
     Route::get('/historique/commandes', [HistoryController::class, 'orders'])->name('history');
     Route::get('/historique/recharges', [HistoryController::class, 'topups'])->name('history.topups');
     Route::get('/historique/export', [HistoryController::class, 'exportCsv'])->name('history.export');
+});
 
-    Route::prefix('api')->name('api.')->group(function () {
-        Route::get('/services', [CatalogController::class, 'services'])->name('services');
-        Route::get('/countries', [CatalogController::class, 'countries'])->name('countries');
-        Route::get('/price', [CatalogController::class, 'price'])->name('price');
+// JSON API for the single-page homepage. Catalog/auth/contact endpoints are public
+// (guests browse services/countries/prices and authenticate inline before purchasing);
+// anything touching a specific user's data or money requires auth, same as the
+// multi-page routes above.
+Route::prefix('api')->name('api.')->group(function () {
+    Route::get('/services', [CatalogController::class, 'services'])->name('services');
+    Route::get('/countries', [CatalogController::class, 'countries'])->name('countries');
+    Route::get('/price', [CatalogController::class, 'price'])->name('price');
+    Route::get('/me', [ApiAuthController::class, 'me'])->name('me');
+    Route::post('/auth/quick', [ApiAuthController::class, 'quick'])->name('auth.quick');
+    Route::post('/contact', [ContactController::class, 'store'])->name('contact');
+
+    Route::middleware('auth')->group(function () {
         Route::get('/orders/{order}/status', [PurchaseController::class, 'status'])->name('orders.status');
+        Route::post('/purchase', [PurchaseController::class, 'storeJson'])->name('purchase.json');
+        Route::get('/dashboard', [DashboardController::class, 'json'])->name('dashboard.json');
+        Route::post('/topup/confirm', [TopupController::class, 'confirm'])->name('topup.confirm');
     });
 });
 

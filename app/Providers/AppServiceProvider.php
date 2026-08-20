@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\FedaPay\FedaPayService;
 use App\Services\FiveSim\Contracts\FiveSimServiceInterface;
 use App\Services\FiveSim\FiveSimService;
 use App\Services\PricingService;
@@ -20,6 +21,10 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(PricingService::class, function ($app) {
             return new PricingService($app['config']['fivesim']);
+        });
+
+        $this->app->singleton(FedaPayService::class, function ($app) {
+            return new FedaPayService($app['config']['fedapay']);
         });
     }
 
