@@ -16,4 +16,14 @@ class HistoryController extends Controller
 
         return view('history.orders', ['orders' => $orders]);
     }
+
+    public function topups(Request $request): View
+    {
+        $topups = $request->user()
+            ->topups()
+            ->latest()
+            ->get();
+
+        return view('history.topups', ['topups' => $topups]);
+    }
 }

@@ -75,6 +75,7 @@ Route::middleware('auth')->group(function () {
         ->name('purchase.cancel');
 
     Route::get('/historique/commandes', [HistoryController::class, 'orders'])->name('history');
+    Route::get('/historique/recharges', [HistoryController::class, 'topups'])->name('history.topups');
 
     Route::prefix('api')->name('api.')->group(function () {
         Route::get('/services', [CatalogController::class, 'services'])->name('services');
