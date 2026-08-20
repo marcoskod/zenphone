@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
@@ -13,20 +15,51 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        $stats = [
+        return view('dashboard', [
+            'stats' => $this->computeStats($user),
+            'chartData' => $this->getActivityChartData($user),
+            'recentOrders' => $this->recentOrders($user),
+        ]);
+    }
+
+    /**
+     * GET /api/dashboard - JSON counterpart of index(), used by the single-page
+     * homepage's "Mon compte" modal. Reuses computeStats()/getActivityChartData()/
+     * recentOrders() rather than duplicating the underlying queries.
+     */
+    public function json(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'stats' => $this->computeStats($user),
+            'chart_data' => $this->getActivityChartData($user),
+            'recent_orders' => $this->recentOrders($user)->map(fn (Order $order) => [
+                'id' => $order->id,
+                'service' => $order->service,
+                'country' => $order->country,
+                'phone' => $order->phone,
+                'status' => $order->status,
+                'sms_received' => (bool) $order->sms_code,
+                'price_fcfa' => (float) $order->price_fcfa,
+                'created_at' => $order->created_at->toIso8601String(),
+            ]),
+        ]);
+    }
+
+    private function computeStats(User $user): array
+    {
+        return [
             'numbers_bought' => $user->orders()->count(),
             'sms_received' => $user->orders()->whereNotNull('sms_code')->count(),
-            'balance' => $user->balance,
+            'balance' => (float) $user->balance,
             'total_spent' => (float) $user->orders()->sum('price_fcfa'),
         ];
+    }
 
-        $recentOrders = $user->orders()->latest()->take(5)->get();
-
-        return view('dashboard', [
-            'stats' => $stats,
-            'chartData' => $this->getActivityChartData($user),
-            'recentOrders' => $recentOrders,
-        ]);
+    private function recentOrders(User $user, int $limit = 5)
+    {
+        return $user->orders()->latest()->take($limit)->get();
     }
 
     /**
