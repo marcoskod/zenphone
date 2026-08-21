@@ -4,8 +4,10 @@ namespace Tests\Feature\Api;
 
 use App\Models\Topup;
 use App\Models\User;
+use App\Notifications\TopupConfirmed;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class TopupControllerTest extends TestCase
@@ -108,5 +110,56 @@ class TopupControllerTest extends TestCase
         $response = $this->postJson(route('api.topup.confirm'), ['transaction_id' => '12345']);
 
         $response->assertStatus(401);
+    }
+
+    public function test_confirm_sends_exactly_one_topup_confirmed_notification(): void
+    {
+        Notification::fake();
+
+        Http::fake([
+            '*/transactions/*' => Http::response(['id' => 12345, 'status' => 'approved', 'amount' => 5000], 200),
+        ]);
+
+        $user = User::factory()->create(['balance' => 1000]);
+
+        $this->actingAs($user)->postJson(route('api.topup.confirm'), ['transaction_id' => '12345']);
+
+        Notification::assertSentTimes(TopupConfirmed::class, 1);
+        Notification::assertSentTo($user, TopupConfirmed::class, function (TopupConfirmed $notification) {
+            $data = $notification->toArray($notification);
+
+            return $data['amount_fcfa'] === 5000.0;
+        });
+    }
+
+    public function test_no_notification_is_sent_when_fedapay_does_not_confirm(): void
+    {
+        Notification::fake();
+
+        Http::fake([
+            '*/transactions/*' => Http::response(['id' => 12345, 'status' => 'pending', 'amount' => 5000], 200),
+        ]);
+
+        $user = User::factory()->create(['balance' => 1000]);
+
+        $this->actingAs($user)->postJson(route('api.topup.confirm'), ['transaction_id' => '12345']);
+
+        Notification::assertNothingSent();
+    }
+
+    public function test_notification_is_not_resent_on_a_duplicate_confirm_call(): void
+    {
+        Notification::fake();
+
+        Http::fake([
+            '*/transactions/*' => Http::response(['id' => 12345, 'status' => 'approved', 'amount' => 5000], 200),
+        ]);
+
+        $user = User::factory()->create(['balance' => 1000]);
+
+        $this->actingAs($user)->postJson(route('api.topup.confirm'), ['transaction_id' => '12345']);
+        $this->actingAs($user)->postJson(route('api.topup.confirm'), ['transaction_id' => '12345']);
+
+        Notification::assertSentTimes(TopupConfirmed::class, 1);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\FedaPayException;
 use App\Http\Controllers\Controller;
 use App\Models\Topup;
+use App\Notifications\TopupConfirmed;
 use App\Services\FedaPay\FedaPayService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -61,11 +62,12 @@ class TopupController extends Controller
             return response()->json(['message' => 'Montant de transaction invalide.'], 422);
         }
 
-        DB::transaction(function () use ($existing, $user, $validated, $amountFcfa) {
+        $topup = DB::transaction(function () use ($existing, $user, $validated, $amountFcfa) {
             if ($existing) {
                 $existing->update(['status' => 'confirmed', 'amount_fcfa' => $amountFcfa]);
+                $topup = $existing;
             } else {
-                Topup::create([
+                $topup = Topup::create([
                     'user_id' => $user->id,
                     'amount_fcfa' => $amountFcfa,
                     'operator' => $validated['operator'] ?? null,
@@ -76,7 +78,13 @@ class TopupController extends Controller
             }
 
             $user->increment('balance', $amountFcfa);
+
+            return $topup;
         });
+
+        // Only reached once server-side verification actually succeeded and balance was
+        // credited above - never sent speculatively.
+        $user->notify(new TopupConfirmed($topup));
 
         return response()->json([
             'status' => 'confirmed',
