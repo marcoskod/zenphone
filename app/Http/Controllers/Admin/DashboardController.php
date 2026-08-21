@@ -20,6 +20,7 @@ class DashboardController extends Controller
     {
         return view('admin.dashboard', [
             'stats' => $this->computeStats(),
+            'chartData' => $this->getRevenueChartData(),
         ]);
     }
 
@@ -57,5 +58,48 @@ class DashboardController extends Controller
             // Documented limitation, not a bug.
             'average_margin_percent' => $this->pricing->marginPercent(),
         ];
+    }
+
+    /**
+     * Revenue (orders + confirmed topups) and an approximated margin, grouped by day
+     * over the last 30 days. The margin line is derived from that day's order revenue
+     * using the CURRENT margin percent (topups aren't a marked-up 5sim cost, so they're
+     * excluded from it) - like average_margin_percent above, this is an approximation
+     * since historical per-order margin isn't stored, not a true day-by-day
+     * reconstruction of what the margin actually was on that day.
+     */
+    private function getRevenueChartData(): array
+    {
+        $start = Carbon::now()->subDays(29)->startOfDay();
+        $marginPercent = $this->pricing->marginPercent();
+
+        $ordersByDay = Order::where('created_at', '>=', $start)
+            ->selectRaw('DATE(created_at) as day, SUM(price_fcfa) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day');
+
+        $topupsByDay = Topup::where('status', 'confirmed')
+            ->where('created_at', '>=', $start)
+            ->selectRaw('DATE(created_at) as day, SUM(amount_fcfa) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day');
+
+        $labels = [];
+        $revenue = [];
+        $margin = [];
+
+        for ($date = $start->copy(); $date->lte(Carbon::now()); $date->addDay()) {
+            $key = $date->toDateString();
+            $orderRevenue = (float) ($ordersByDay[$key] ?? 0);
+            $topupRevenue = (float) ($topupsByDay[$key] ?? 0);
+
+            $labels[] = $date->format('d/m');
+            $revenue[] = $orderRevenue + $topupRevenue;
+            // price_fcfa = cost * (1 + margin/100), so the margin portion of price_fcfa
+            // is price_fcfa * margin / (100 + margin).
+            $margin[] = round($orderRevenue * $marginPercent / (100 + $marginPercent), 2);
+        }
+
+        return ['labels' => $labels, 'revenue' => $revenue, 'margin' => $margin];
     }
 }

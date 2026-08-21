@@ -50,6 +50,56 @@
                     </div>
                 </div>
             </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <h3 class="text-sm font-semibold text-secondary dark:text-light">Chiffre d'affaires et marge (30 derniers jours)</h3>
+                <div class="mt-4 h-72">
+                    <canvas id="admin-revenue-chart"></canvas>
+                </div>
+            </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('admin-revenue-chart');
+
+            if (!canvas || !window.Chart) {
+                return;
+            }
+
+            new window.Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: @json($chartData['labels']),
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'Chiffre d\'affaires (FCFA)',
+                            data: @json($chartData['revenue']),
+                            borderColor: '#1F3569',
+                            backgroundColor: 'rgba(31, 53, 105, 0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            yAxisID: 'y',
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Marge estimée (FCFA)',
+                            data: @json($chartData['margin']),
+                            backgroundColor: '#D4A017',
+                            yAxisID: 'y',
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true },
+                    },
+                },
+            });
+        });
+    </script>
 </x-app-layout>
