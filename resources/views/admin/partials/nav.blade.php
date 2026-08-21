@@ -1,6 +1,7 @@
 @php
     $adminLinks = [
         ['route' => 'admin.dashboard', 'label' => 'Tableau de bord', 'icon' => 'fa-gauge'],
+        ['route' => 'admin.users', 'label' => 'Utilisateurs', 'icon' => 'fa-users'],
     ];
 @endphp
 
