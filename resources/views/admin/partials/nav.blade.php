@@ -4,6 +4,7 @@
         ['route' => 'admin.users', 'label' => 'Utilisateurs', 'icon' => 'fa-users'],
         ['route' => 'admin.settings.margin', 'label' => 'Marge', 'icon' => 'fa-percent'],
         ['route' => 'admin.transactions', 'label' => 'Transactions', 'icon' => 'fa-receipt'],
+        ['route' => 'admin.support', 'label' => 'Support', 'icon' => 'fa-headset'],
     ];
 @endphp
 
