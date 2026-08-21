@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Order;
+use App\Models\Topup;
 use App\Models\User;
+use App\Notifications\TopupConfirmed;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -50,5 +52,21 @@ class DashboardControllerTest extends TestCase
 
         $response->assertSee('+79005551234');
         $response->assertDontSee('+79009998888');
+    }
+
+    public function test_notification_bell_renders_a_real_unread_notification_instead_of_the_empty_state(): void
+    {
+        $user = User::factory()->create(['balance' => 5000]);
+        $topup = Topup::factory()->for($user)->create(['amount_fcfa' => 5000]);
+
+        // Sent for real (no Notification::fake() here) so it lands in the database
+        // channel and unreadNotifications actually has a row for the view to render.
+        $user->notify(new TopupConfirmed($topup));
+
+        $response = $this->actingAs($user)->get('/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertSee('Rechargement de 5 000 FCFA confirmé.');
+        $response->assertDontSee('Aucune notification pour le moment.');
     }
 }

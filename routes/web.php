@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController as ApiAuthController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TopupController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HistoryController;
@@ -102,6 +103,7 @@ Route::prefix('api')->name('api.')->group(function () {
         Route::post('/purchase', [PurchaseController::class, 'storeJson'])->name('purchase.json');
         Route::get('/dashboard', [DashboardController::class, 'json'])->name('dashboard.json');
         Route::post('/topup/confirm', [TopupController::class, 'confirm'])->name('topup.confirm');
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     });
 });
 
