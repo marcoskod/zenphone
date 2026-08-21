@@ -2,6 +2,7 @@
     $adminLinks = [
         ['route' => 'admin.dashboard', 'label' => 'Tableau de bord', 'icon' => 'fa-gauge'],
         ['route' => 'admin.users', 'label' => 'Utilisateurs', 'icon' => 'fa-users'],
+        ['route' => 'admin.settings.margin', 'label' => 'Marge', 'icon' => 'fa-percent'],
     ];
 @endphp
 

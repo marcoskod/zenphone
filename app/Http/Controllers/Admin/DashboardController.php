@@ -6,11 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Topup;
 use App\Models\User;
+use App\Services\PricingService;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
+    public function __construct(protected PricingService $pricing)
+    {
+    }
+
     public function index(): View
     {
         return view('admin.dashboard', [
@@ -47,9 +52,10 @@ class DashboardController extends Controller
             // Reconstructing the actual per-order margin would require the original
             // 5sim USD cost stored alongside each order, which isn't captured today
             // (orders only stores price_fcfa, the already-marked-up customer price) -
-            // so this reports the currently configured margin rather than a computed
-            // average. Documented limitation, not a bug.
-            'average_margin_percent' => (float) config('fivesim.margin_percent'),
+            // so this reports the currently configured margin (admin setting if one
+            // exists, else FIVESIM_MARGIN_PERCENT) rather than a computed average.
+            // Documented limitation, not a bug.
+            'average_margin_percent' => $this->pricing->marginPercent(),
         ];
     }
 }
