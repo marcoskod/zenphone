@@ -4,9 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Order;
 use App\Models\User;
+use App\Notifications\SmsReceived;
 use App\Services\PricingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class PurchaseControllerTest extends TestCase
@@ -203,6 +205,90 @@ class PurchaseControllerTest extends TestCase
         $this->actingAs($user)->getJson(route('api.orders.status', $order));
 
         $this->assertSame('111111', $order->refresh()->sms_code);
+    }
+
+    public function test_status_endpoint_sends_sms_received_notification_exactly_once_on_first_poll_with_a_code(): void
+    {
+        Notification::fake();
+
+        Http::fake([
+            '*/user/check/*' => Http::response([
+                'id' => 123456,
+                'status' => 'RECEIVED',
+                'sms' => [
+                    ['sender' => 'WhatsApp', 'text' => 'Your code: 654321', 'code' => '654321'],
+                ],
+            ], 200),
+        ]);
+
+        $user = User::factory()->create();
+        $order = Order::factory()->for($user)->create([
+            'fivesim_order_id' => 123456,
+            'status' => 'pending',
+            'sms_code' => null,
+        ]);
+
+        $this->actingAs($user)->getJson(route('api.orders.status', $order));
+
+        Notification::assertSentTimes(SmsReceived::class, 1);
+        Notification::assertSentTo($user, SmsReceived::class, function (SmsReceived $notification) {
+            $data = $notification->toArray($notification);
+
+            return $data['sms_code'] === '654321';
+        });
+    }
+
+    public function test_status_endpoint_does_not_resend_sms_received_notification_on_a_later_poll(): void
+    {
+        Notification::fake();
+
+        Http::fake([
+            '*/user/check/*' => Http::response([
+                'id' => 123456,
+                'status' => 'RECEIVED',
+                'sms' => [
+                    ['sender' => 'WhatsApp', 'text' => 'Your code: 654321', 'code' => '654321'],
+                ],
+            ], 200),
+        ]);
+
+        $user = User::factory()->create();
+        $order = Order::factory()->for($user)->create([
+            'fivesim_order_id' => 123456,
+            'status' => 'pending',
+            'sms_code' => null,
+        ]);
+
+        // First poll: code just arrived, notification should fire.
+        $this->actingAs($user)->getJson(route('api.orders.status', $order));
+        // Second poll: code already present, must not fire again.
+        $this->actingAs($user)->getJson(route('api.orders.status', $order));
+
+        Notification::assertSentTimes(SmsReceived::class, 1);
+    }
+
+    public function test_status_endpoint_does_not_send_sms_received_notification_when_no_code_is_present(): void
+    {
+        Notification::fake();
+
+        Http::fake([
+            '*/user/check/*' => Http::response([
+                'id' => 123456,
+                'status' => 'PENDING',
+                'sms' => [],
+            ], 200),
+        ]);
+
+        $user = User::factory()->create();
+        $order = Order::factory()->for($user)->create([
+            'fivesim_order_id' => 123456,
+            'status' => 'pending',
+            'sms_code' => null,
+        ]);
+
+        $this->actingAs($user)->getJson(route('api.orders.status', $order));
+
+        Notification::assertNothingSent();
     }
 
     public function test_status_endpoint_is_forbidden_for_another_users_order(): void

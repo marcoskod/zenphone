@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exceptions\FiveSimException;
 use App\Models\Order;
 use App\Models\User;
+use App\Notifications\SmsReceived;
 use App\Services\FiveSim\Contracts\FiveSimServiceInterface;
 use App\Services\PricingService;
 use Illuminate\Http\JsonResponse;
@@ -180,11 +181,21 @@ class PurchaseController extends Controller
 
         $smsCode = $this->extractSmsCode($result);
 
+        // Captured before update() runs, while $order->sms_code still holds the
+        // pre-poll value - this is what lets us detect a genuine no-code -> has-code
+        // transition below rather than firing on every poll that simply re-confirms
+        // an already-received code.
+        $justReceived = $order->sms_code === null && $smsCode !== null;
+
         $order->update([
             'status' => strtolower($result['status'] ?? $order->status),
             // Never clobber an already-received code with a blank result from a later poll.
             'sms_code' => $smsCode ?? $order->sms_code,
         ]);
+
+        if ($justReceived) {
+            $order->user->notify(new SmsReceived($order));
+        }
 
         return response()->json([
             'status' => $order->status,
