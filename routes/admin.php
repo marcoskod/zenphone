@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -14,4 +15,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::get('/settings/margin', [SettingsController::class, 'margin'])->name('settings.margin');
     Route::post('/settings/margin', [SettingsController::class, 'updateMargin'])->name('settings.margin.update');
+
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions');
 });

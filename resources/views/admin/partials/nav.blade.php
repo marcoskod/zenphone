@@ -3,6 +3,7 @@
         ['route' => 'admin.dashboard', 'label' => 'Tableau de bord', 'icon' => 'fa-gauge'],
         ['route' => 'admin.users', 'label' => 'Utilisateurs', 'icon' => 'fa-users'],
         ['route' => 'admin.settings.margin', 'label' => 'Marge', 'icon' => 'fa-percent'],
+        ['route' => 'admin.transactions', 'label' => 'Transactions', 'icon' => 'fa-receipt'],
     ];
 @endphp
 
