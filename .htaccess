@@ -1,0 +1,14 @@
+# Hostinger's "Deploy from GitHub" copies the repo root into public_html, but Laravel must
+# be served from public/. Send every request there, and never expose anything else.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Never serve app internals or secrets, even if a request names them directly.
+    RewriteRule ^(\.env|\.git|\.github|\.claude|app|bootstrap|config|database|resources|routes|storage|tests|vendor|node_modules)(/|$) - [F,L,NC]
+    RewriteRule ^(artisan|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|vite\.config\.js|tailwind\.config\.js|postcss\.config\.js|README\.md)$ - [F,L,NC]
+
+    # Everything else is handled by Laravel's own public/.htaccess and index.php.
+    RewriteRule ^$ public/ [L]
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

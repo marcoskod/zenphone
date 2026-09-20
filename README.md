@@ -24,6 +24,16 @@ Virtual phone numbers for receiving verification SMS (WhatsApp, Telegram, Google
 10. **Do one real sandbox payment first** and confirm in the logs/DB that the order is delivered - this also proves FedaPay echoes `custom_metadata` back (the anti-replay check relies on it; see `PurchaseFinalizer`).
 11. Fill in the placeholders in the *Mentions légales* modal (company name, address, host) before advertising.
 
+## Deploying on Hostinger (Deploy from GitHub -> public_html)
+
+`vendor/` and `public/build/` are committed, and a root `.htaccess` sends every request to `public/`, so the repo works as-is in `public_html`. One-time setup on the server (hPanel -> File Manager or SSH):
+
+1. In hPanel set **PHP 8.2 or newer** for the domain, and create a **MySQL database + user**.
+2. Create `public_html/.env` by hand from `.env.example` (never committed): `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://zenphone.space`, the `DB_*` values (`DB_CONNECTION=mysql`), SMTP `MAIL_*`, the SMSPool and FedaPay keys, `QUEUE_CONNECTION=sync` (shared hosting cannot keep a queue worker alive), `TRUSTED_PROXIES=*` only if a proxy/CDN is in front.
+3. SSH (or hPanel's terminal), from `public_html`: `php artisan key:generate --force && php artisan migrate --force && php artisan storage:link && php artisan zensms:preflight`.
+4. hPanel -> Cron Jobs, every minute: `cd /home/USER/domains/zenphone.space/public_html && php artisan schedule:run >> /dev/null 2>&1`
+5. Make `storage/` and `bootstrap/cache/` writable (755/775). After each release: `composer install --no-dev` + `npm run build` locally, commit `vendor/` and `public/build/`, push, then press Deploy.
+
 ## Tests
 
 `php artisan test`
