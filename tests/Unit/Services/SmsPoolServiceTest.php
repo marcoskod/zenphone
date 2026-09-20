@@ -72,7 +72,8 @@ class SmsPoolServiceTest extends TestCase
 
         $this->assertEqualsCanonicalizing(['google', 'instagram-900', 'whatsapp'], $services->keys()->all());
         $this->assertSame(0.60, $services['whatsapp']['price_usd']);
-        $this->assertSame('Google/Gmail', $services['google']['label']);
+        $this->assertSame('Google', $services['google']['label']);
+        $this->assertSame('Instagram', $services['instagram-900']['label']);
         $this->assertSame(0.10, $services['instagram-900']['price_usd']);
     }
 

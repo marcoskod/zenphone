@@ -44,10 +44,9 @@ const POPULAR_SERVICES = [
     'tiktok', 'twitter', 'snapchat', 'discord', 'openai', 'amazon', 'tinder',
 ];
 
-// country code -> ISO 3166 alpha-2, filled from /api/countries. A flag emoji is just the
-// two ISO letters shifted into the regional-indicator block, so no hand-kept table.
-const COUNTRY_ISO = {};
-
+// A flag emoji is just the two ISO letters shifted into the regional-indicator block, so
+// no hand-kept table: each component looks the ISO code up in its own (reactive) country
+// list, which is what lets flags re-render once /api/countries has loaded.
 function isoFlag(iso) {
     if (!/^[A-Za-z]{2}$/.test(iso ?? '')) {
         return '🌍';
@@ -58,10 +57,6 @@ function isoFlag(iso) {
 
 function serviceIcon(code) {
     return SERVICE_ICONS[code] ?? 'fa-solid fa-mobile-screen';
-}
-
-function countryFlag(code) {
-    return isoFlag(COUNTRY_ISO[code]);
 }
 
 // Tracks the one order currently being waited on, so a reload/relaunch (page refresh,
@@ -164,13 +159,8 @@ async function getJson(url) {
 
 async function fetchCountries() {
     const json = await getJson('/api/countries');
-    const countries = json?.data ?? [];
 
-    countries.forEach((c) => {
-        COUNTRY_ISO[c.code] = c.iso;
-    });
-
-    return countries;
+    return json?.data ?? [];
 }
 
 async function fetchServicesForCountry(country) {
@@ -253,7 +243,9 @@ Alpine.data('purchaseForm', (initialService = '', initialCountry = '') => ({
     },
 
     serviceIcon,
-    countryFlag,
+    countryFlag(code) {
+        return isoFlag(this.countries.find((c) => c.code === code)?.iso);
+    },
 
     async loadServices() {
         this.services = await fetchServicesForCountry(this.country);
@@ -580,7 +572,9 @@ Alpine.data('zenSinglePage', () => ({
     },
 
     serviceIcon,
-    countryFlag,
+    countryFlag(code) {
+        return isoFlag(this.countries.find((c) => c.code === code)?.iso);
+    },
 
     /* ── Auth ── */
     async loadAuthStatus() {

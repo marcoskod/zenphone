@@ -56,7 +56,12 @@ class SmsPoolService implements SmsProviderInterface
 
                 [$code, $name] = $codeById[$serviceId];
 
-                return ['code' => $code, 'label' => $name, 'price_usd' => $price];
+                // "Facebook / Meta Viewpoints" doesn't fit a tile; show the brand part. A
+                // slug that had to be disambiguated (suffix) keeps the full name so two
+                // tiles never read identically.
+                $label = preg_match('/-\d+$/', $code) ? $name : trim(explode('/', $name)[0]);
+
+                return ['code' => $code, 'label' => $label, 'price_usd' => $price];
             })
             ->filter()
             ->sortBy('label', SORT_NATURAL | SORT_FLAG_CASE)
