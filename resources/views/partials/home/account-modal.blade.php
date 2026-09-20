@@ -23,7 +23,7 @@
         class="flex max-h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900"
     >
         <div class="relative shrink-0 bg-gradient-to-br from-secondary to-primary p-5">
-            <p class="text-[10px] font-semibold uppercase tracking-widest text-accent">Zen_Sms &rsaquo; Mon compte</p>
+            <p class="text-[10px] font-semibold uppercase tracking-widest text-accent">Zenphone &rsaquo; Mon compte</p>
             <h3 class="mt-1 pr-8 text-base font-bold text-white" x-text="user?.email"></h3>
             <button
                 @click="showAccountModal = false"

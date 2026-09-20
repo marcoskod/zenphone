@@ -79,6 +79,12 @@ const POPULAR_SERVICES = [
 // A flag emoji is just the two ISO letters shifted into the regional-indicator block, so
 // no hand-kept table: each component looks the ISO code up in its own (reactive) country
 // list, which is what lets flags re-render once /api/countries has loaded.
+// Real flag images: Windows renders flag emoji as two plain letters, which looks broken in
+// a country list. flagcdn.com serves small, cacheable PNGs keyed by lowercase ISO code.
+function flagImageUrl(iso, width = 40) {
+    return /^[A-Za-z]{2}$/.test(iso ?? '') ? `https://flagcdn.com/w${width}/${iso.toLowerCase()}.png` : null;
+}
+
 function isoFlag(iso) {
     if (!/^[A-Za-z]{2}$/.test(iso ?? '')) {
         return '🌍';
@@ -289,6 +295,12 @@ Alpine.data('purchaseForm', (initialService = '', initialCountry = '') => ({
     countryFlag(code) {
         return isoFlag(this.countries.find((c) => c.code === code)?.iso);
     },
+    countryFlagUrl(code, width = 40) {
+        return flagImageUrl(this.countries.find((c) => c.code === code)?.iso, width);
+    },
+    formatFcfa(amount) {
+        return new Intl.NumberFormat('fr-FR').format(amount);
+    },
 
     async loadServices() {
         this.services = await fetchServicesForCountry(this.country);
@@ -482,7 +494,7 @@ Alpine.data('orderWaiting', (orderId, expiresAtIso, initialStatus = 'pending', i
 }));
 
 /* ══════════════════════════════════════════════════════════════════════════
-   SINGLE-PAGE HOMEPAGE (Zen_Sms) - card/modal-driven checkout experience.
+   SINGLE-PAGE HOMEPAGE (Zenphone) - card/modal-driven checkout experience.
    See resources/views/home.blade.php. Reuses the fetch helpers above rather
    than duplicating catalog/order AJAX logic.
 ══════════════════════════════════════════════════════════════════════════ */
@@ -632,6 +644,12 @@ Alpine.data('zenSinglePage', () => ({
     serviceTileStyle,
     countryFlag(code) {
         return isoFlag(this.countries.find((c) => c.code === code)?.iso);
+    },
+    countryFlagUrl(code, width = 40) {
+        return flagImageUrl(this.countries.find((c) => c.code === code)?.iso, width);
+    },
+    formatFcfa(amount) {
+        return new Intl.NumberFormat('fr-FR').format(amount);
     },
 
     /* ── Auth ── */

@@ -22,7 +22,12 @@ class PricingService
 
         $withMargin = $fcfa * (1 + ($this->marginPercent() / 100));
 
-        return (float) ceil($withMargin);
+        // round() first: 0.14 x 600 x 3 is 252.00000000000003 in floating point, which a bare
+        // ceil() would push to 253. The floor keeps micro-priced services above what a
+        // Mobile Money transaction can actually charge.
+        $whole = (float) ceil(round($withMargin, 4));
+
+        return max($whole, (float) ($this->config['min_price_fcfa'] ?? 0));
     }
 
     /**

@@ -8,5 +8,5 @@
 </nav>
 
 <p class="mt-3 text-center text-[11px] text-secondary/40 dark:text-light/40">
-    &copy; {{ now()->year }} Zen_Sms. Tous droits réservés.
+    &copy; {{ now()->year }} Zenphone. Tous droits réservés.
 </p>

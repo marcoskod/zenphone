@@ -30,7 +30,7 @@ class TopupConfirmed extends Notification implements ShouldQueue
         $balance = number_format((float) $notifiable->balance, 0, ',', ' ');
 
         return (new MailMessage)
-            ->subject('Rechargement confirmé — Zen_Sms')
+            ->subject('Rechargement confirmé — Zenphone')
             ->greeting('Bonjour '.$notifiable->name.',')
             ->line("Votre rechargement de {$amount} FCFA a été confirmé.")
             ->line("Votre nouveau solde est de {$balance} FCFA.")

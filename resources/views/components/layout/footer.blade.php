@@ -52,7 +52,7 @@
         </div>
 
         <div class="mt-10 border-t border-slate-200 pt-6 text-center text-sm text-secondary/60 dark:border-slate-800 dark:text-light/60">
-            &copy; {{ now()->year }} Zen_Sms. Tous droits réservés.
+            &copy; {{ now()->year }} Zenphone. Tous droits réservés.
         </div>
     </div>
 </footer>

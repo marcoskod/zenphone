@@ -1,6 +1,6 @@
 @extends('layouts.marketing')
 
-@section('title', 'Zen_Sms — Numéros virtuels pour vos SMS de vérification')
+@section('title', 'Zenphone — Numéros virtuels pour vos SMS de vérification')
 
 @section('content')
     <x-landing.hero />

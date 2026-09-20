@@ -2,6 +2,11 @@
     Une question, un problème avec une commande, une suggestion ? Écrivez-nous, nous répondons généralement sous 24 heures.
 </p>
 
+<a href="mailto:support@zenphone.space" class="mb-4 flex items-center gap-2 rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm font-semibold text-primary transition hover:bg-slate-50 dark:border-slate-700 dark:text-accent dark:hover:bg-slate-800">
+    <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+    support@zenphone.space
+</a>
+
 <template x-if="contactSent">
     <div class="rounded-lg border border-success/30 bg-success/5 p-4 text-center text-sm text-success">
         <i class="fa-solid fa-circle-check"></i>

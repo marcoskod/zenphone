@@ -8,7 +8,10 @@
             class="flex w-full items-center justify-between rounded-lg border-2 border-slate-200 px-3.5 py-2.5 text-left text-sm text-secondary transition focus:border-primary dark:border-slate-700 dark:text-light"
         >
             <span class="flex items-center gap-2">
-                <span x-show="country" x-text="countryFlag(country)"></span>
+                <span x-show="country" class="relative flex h-[18px] w-6 shrink-0 items-center justify-center overflow-hidden rounded-[3px] bg-slate-200 text-[9px] font-bold text-slate-500 ring-1 ring-black/10 dark:bg-slate-700">
+                    <span x-text="countries.find(c => c.code === country)?.iso"></span>
+                    <img x-show="countryFlagUrl(country)" :src="countryFlagUrl(country, 80)" alt="" width="24" height="18" class="absolute inset-0 h-full w-full object-cover" x-on:error="$el.remove()">
+                </span>
                 <span x-text="selectedCountryLabel"></span>
             </span>
             <i class="fa-solid fa-chevron-down text-xs text-secondary/40 transition" :class="{ 'rotate-180': showCountryDropdown }"></i>
@@ -40,8 +43,12 @@
                         class="flex w-full items-center gap-3 px-3.5 py-2 text-left text-sm transition hover:bg-slate-50 dark:hover:bg-slate-700"
                         :class="country === item.code ? 'bg-primary/10 text-primary' : 'text-secondary dark:text-light'"
                     >
-                        <span x-text="countryFlag(item.code)"></span>
-                        <span x-text="item.name"></span>
+                        <span class="relative flex h-[18px] w-6 shrink-0 items-center justify-center overflow-hidden rounded-[3px] bg-slate-200 text-[9px] font-bold text-slate-500 ring-1 ring-black/10 dark:bg-slate-700">
+                            <span x-text="item.iso"></span>
+                            <img :src="countryFlagUrl(item.code, 80)" x-show="countryFlagUrl(item.code)" alt="" width="24" height="18" loading="lazy" class="absolute inset-0 h-full w-full object-cover" x-on:error="$el.remove()">
+                        </span>
+                        <span class="min-w-0 flex-1 truncate" x-text="item.name"></span>
+                        <span class="shrink-0 text-[11px] text-secondary/50 dark:text-light/50" x-show="item.from_price_fcfa">dès <span class="font-bold text-accent" x-text="formatFcfa(item.from_price_fcfa) + ' F'"></span></span>
                     </button>
                 </template>
                 <p class="px-3.5 py-3 text-sm text-secondary/50" x-show="filteredCountries.length === 0">Aucun pays trouvé.</p>

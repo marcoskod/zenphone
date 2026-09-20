@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 class MakeAdmin extends Command
 {
-    protected $signature = 'zensms:make-admin {email : Email of an existing account}';
+    protected $signature = 'zenphone:make-admin {email : Email of an existing account}';
 
     protected $description = 'Promote an existing account (register it on the site first) to administrator';
 

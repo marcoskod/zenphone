@@ -42,7 +42,8 @@ class CatalogController extends Controller
 
     /**
      * GET /api/countries - country list for the country-selector component. `iso` lets
-     * the frontend render flags without a hand-maintained lookup table.
+     * the frontend render flags without a hand-maintained lookup table; `from_price_fcfa`
+     * is the cheapest popular service there (null when none is offered).
      */
     public function countries(): JsonResponse
     {
@@ -51,6 +52,15 @@ class CatalogController extends Controller
         } catch (SmsProviderException $e) {
             return response()->json(['message' => $e->getMessage()], 502);
         }
+
+        // "dès X F" per country, at the same price a customer would actually pay.
+        $startingPrices = $this->sms->getStartingPrices();
+
+        $countries = array_map(fn (array $country) => $country + [
+            'from_price_fcfa' => isset($startingPrices[$country['code']])
+                ? $this->pricing->calculatePrice($startingPrices[$country['code']])
+                : null,
+        ], $countries);
 
         return response()->json(['data' => $countries]);
     }

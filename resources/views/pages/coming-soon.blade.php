@@ -1,6 +1,6 @@
 @extends('layouts.marketing')
 
-@section('title', ($title ?? 'Bientôt disponible') . ' — Zen_Sms')
+@section('title', ($title ?? 'Bientôt disponible') . ' — Zenphone')
 
 @section('content')
     <section class="mx-auto flex max-w-3xl flex-col items-center px-4 py-24 text-center sm:px-6 lg:px-8">

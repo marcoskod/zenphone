@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>Zen_Sms — Numéros virtuels pour vos SMS de vérification</title>
+        <title>Zenphone — Numéros virtuels pour vos SMS de vérification</title>
         <meta name="description" content="Créez vos comptes WhatsApp, Telegram, Google… avec un numéro étranger. Choisissez un pays, payez en Mobile Money et recevez votre code SMS en quelques secondes.">
         <meta name="theme-color" content="#1F3569">
         <link rel="canonical" href="{{ url('/') }}">
@@ -16,7 +16,7 @@
         <meta property="og:site_name" content="{{ config('app.name') }}">
         <meta property="og:locale" content="fr_FR">
         <meta property="og:url" content="{{ url('/') }}">
-        <meta property="og:title" content="Zen_Sms — Créez vos comptes avec un numéro étranger">
+        <meta property="og:title" content="Zenphone — Créez vos comptes avec un numéro étranger">
         <meta property="og:description" content="WhatsApp, Telegram, Google… Recevez votre code de vérification en quelques secondes. Payez en Mobile Money, remboursé si aucun SMS.">
         <meta name="twitter:card" content="summary">
 
@@ -57,7 +57,7 @@
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
                                 <span class="h-1.5 w-1.5 rounded-full bg-accent"></span>
-                                Zen_Sms · SMS instantané
+                                Zenphone · SMS instantané
                             </div>
 
                             {{-- Account icon, visible once authenticated --}}

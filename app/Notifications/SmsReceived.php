@@ -27,7 +27,7 @@ class SmsReceived extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Code SMS reçu — Zen_Sms')
+            ->subject('Code SMS reçu — Zenphone')
             ->greeting('Bonjour '.$notifiable->name.',')
             ->line("Un code SMS est arrivé pour votre numéro {$this->order->phone} ({$this->order->service}).")
             ->line("Code reçu : {$this->order->sms_code}")

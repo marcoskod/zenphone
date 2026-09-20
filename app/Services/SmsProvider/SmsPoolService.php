@@ -31,6 +31,14 @@ class SmsPoolService implements SmsProviderInterface
 
     private const PRICING_TTL_MINUTES = 10;
 
+    private const STARTING_PRICE_TTL_MINUTES = 30;
+
+    /** Services whose cheapest price defines a country's "dès X". */
+    private const HEADLINE_SERVICES = [
+        'whatsapp', 'telegram', 'google', 'instagram', 'facebook', 'tiktok',
+        'twitter', 'snapchat', 'discord', 'openai', 'amazon', 'tinder',
+    ];
+
     public function __construct(protected array $config)
     {
     }
@@ -42,6 +50,47 @@ class SmsPoolService implements SmsProviderInterface
             ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
             ->values()
             ->all();
+    }
+
+    public function getStartingPrices(): array
+    {
+        return Cache::remember('smspool.starting_prices', now()->addMinutes(self::STARTING_PRICE_TTL_MINUTES), function () {
+            $serviceMap = $this->serviceMap();
+            $serviceIds = collect(self::HEADLINE_SERVICES)->map(fn (string $code) => $serviceMap[$code]['id'] ?? null)->filter()->values()->all();
+
+            // request/pricing refuses "all countries" (HTTP 500) but answers per service
+            // with one row per country, so ask for each headline service in parallel.
+            try {
+                $responses = Http::pool(fn ($pool) => array_map(
+                    fn (int $id) => $pool->baseUrl($this->config['base_url'])->acceptJson()->asForm()->timeout(25)->post('/request/pricing', ['service' => $id]),
+                    $serviceIds,
+                ));
+            } catch (\Throwable $e) {
+                Log::warning('SMSPool starting prices unavailable', ['error' => $e->getMessage()]);
+
+                return [];
+            }
+
+            $codeByCountryId = collect($this->countryMap())->mapWithKeys(fn (array $c, string $code) => [$c['id'] => $code]);
+            $cheapest = [];
+
+            foreach ($responses as $response) {
+                if (! $response instanceof Response || $response->failed()) {
+                    continue;
+                }
+
+                foreach ($response->json() ?? [] as $row) {
+                    $code = $codeByCountryId[(int) ($row['country'] ?? 0)] ?? null;
+                    $price = (float) ($row['price'] ?? 0);
+
+                    if ($code && $price > 0 && (! isset($cheapest[$code]) || $price < $cheapest[$code])) {
+                        $cheapest[$code] = $price;
+                    }
+                }
+            }
+
+            return $cheapest;
+        });
     }
 
     public function getServices(string $country): array

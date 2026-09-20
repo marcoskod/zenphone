@@ -2,7 +2,8 @@
     <div>
         <h4 class="mb-1.5 text-xs font-bold uppercase tracking-wide text-primary">Éditeur du site</h4>
         <p class="text-sm leading-relaxed text-secondary/80 dark:text-light/80">
-            Zen_Sms — plateforme de vente de numéros virtuels pour la réception de SMS de vérification.
+            Zenphone (zenphone.space) — plateforme de vente de numéros virtuels pour la réception de SMS de vérification.
+            Contact : <a href="mailto:support@zenphone.space" class="font-semibold text-primary hover:underline dark:text-accent">support@zenphone.space</a>.
             Raison sociale, forme juridique, siège social, numéro d'immatriculation et coordonnées complètes de
             l'éditeur à compléter avant la mise en ligne officielle.
         </p>

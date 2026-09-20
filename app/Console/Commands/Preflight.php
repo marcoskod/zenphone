@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class Preflight extends Command
 {
-    protected $signature = 'zensms:preflight';
+    protected $signature = 'zenphone:preflight';
 
     protected $description = 'Check the environment is ready for production (keys, debug flags, HTTPS, mail, database)';
 

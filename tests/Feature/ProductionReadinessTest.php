@@ -248,12 +248,12 @@ class ProductionReadinessTest extends TestCase
 
     public function test_preflight_fails_in_a_default_local_setup_and_make_admin_promotes(): void
     {
-        $this->artisan('zensms:preflight')->assertFailed();
+        $this->artisan('zenphone:preflight')->assertFailed();
 
         $user = User::factory()->create();
-        $this->artisan('zensms:make-admin', ['email' => $user->email])->assertSuccessful();
+        $this->artisan('zenphone:make-admin', ['email' => $user->email])->assertSuccessful();
         $this->assertTrue($user->fresh()->is_admin);
 
-        $this->artisan('zensms:make-admin', ['email' => 'nobody@example.com'])->assertFailed();
+        $this->artisan('zenphone:make-admin', ['email' => 'nobody@example.com'])->assertFailed();
     }
 }

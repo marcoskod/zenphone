@@ -1,6 +1,6 @@
 <div class="space-y-4 text-sm leading-relaxed text-secondary/80 dark:text-light/80">
     <p>
-        <strong class="text-secondary dark:text-light">Zen_Sms</strong> est une plateforme conçue pour les particuliers et
+        <strong class="text-secondary dark:text-light">Zenphone</strong> est une plateforme conçue pour les particuliers et
         professionnels d'Afrique de l'Ouest qui ont besoin de vérifier un compte en ligne (WhatsApp, Google, Instagram,
         TikTok, Telegram, et bien d'autres) sans utiliser leur numéro de téléphone personnel.
     </p>
@@ -13,7 +13,7 @@
         partenaire de paiement <strong class="text-secondary dark:text-light">FedaPay</strong>.
     </p>
     <p>
-        Zen_Sms est un service en développement actif : de nouvelles fonctionnalités (historique détaillé, notifications,
+        Zenphone est un service en développement actif : de nouvelles fonctionnalités (historique détaillé, notifications,
         support étendu) sont ajoutées régulièrement. Votre retour nous aide à nous améliorer — n'hésitez pas à nous
         écrire via le formulaire de contact.
     </p>

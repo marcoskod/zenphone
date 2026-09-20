@@ -16,6 +16,16 @@ interface SmsProviderInterface
     public function getCountries(): array;
 
     /**
+     * Cheapest current USD price among the most requested services (WhatsApp, Telegram,
+     * Google...), per country code - what a "dès X" label can honestly promise. Countries
+     * where none of them is offered are absent. Returns [] rather than failing if the
+     * supplier can't be reached: prices are decoration on the country list, not required.
+     *
+     * @return array<string, float>
+     */
+    public function getStartingPrices(): array;
+
+    /**
      * Services orderable in a country, each with its cheapest current USD price.
      *
      * @return list<array{code: string, label: string, price_usd: float}>

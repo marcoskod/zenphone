@@ -13,7 +13,7 @@ class AdminUserSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Creates (or promotes, if it already exists) a single admin@zensms.test account with
+     * Creates (or promotes, if it already exists) a single admin@zenphone.test account with
      * a freshly generated random password, printed once to the console. Deliberately
      * gated to local/testing - this must never run against a real/production database,
      * and never leaves a guessable default password lying around: run it again to get a
@@ -32,9 +32,9 @@ class AdminUserSeeder extends Seeder
         $password = Str::password(20);
 
         $admin = User::updateOrCreate(
-            ['email' => 'admin@zensms.test'],
+            ['email' => 'admin@zenphone.test'],
             [
-                'name' => 'Admin Zen_Sms',
+                'name' => 'Admin Zenphone',
                 'password' => Hash::make($password),
                 'email_verified_at' => now(),
             ],

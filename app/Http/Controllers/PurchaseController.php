@@ -142,7 +142,7 @@ class PurchaseController extends Controller
             'paid_with' => 'fedapay',
             'pending_purchase_id' => $pending->id,
             'amount' => (float) $priceFcfa,
-            'description' => "Numéro {$validated['service']} ({$validated['country']}) — Zen_Sms",
+            'description' => "Numéro {$validated['service']} ({$validated['country']}) — Zenphone",
         ]);
     }
 

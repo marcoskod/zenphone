@@ -31,7 +31,7 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-2xl text-center">
             <h2 class="text-3xl font-bold text-secondary dark:text-light sm:text-4xl">Ils nous font confiance</h2>
-            <p class="mt-4 text-secondary/70 dark:text-light/70">Des milliers d'utilisateurs en Afrique de l'Ouest utilisent Zen_Sms au quotidien.</p>
+            <p class="mt-4 text-secondary/70 dark:text-light/70">Des milliers d'utilisateurs en Afrique de l'Ouest utilisent Zenphone au quotidien.</p>
         </div>
 
         <div class="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

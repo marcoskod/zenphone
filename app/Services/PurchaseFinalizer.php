@@ -100,7 +100,7 @@ class PurchaseFinalizer
 
                 return [
                     'ok' => false,
-                    'message' => "Le numéro n'a pas pu être réservé après votre paiement. Le montant a été crédité sur votre solde Zen_Sms : ".$e->getMessage(),
+                    'message' => "Le numéro n'a pas pu être réservé après votre paiement. Le montant a été crédité sur votre solde Zenphone : ".$e->getMessage(),
                     'status' => 502,
                 ];
             }

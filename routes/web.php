@@ -51,7 +51,7 @@ Route::view('/confidentialite', 'pages.coming-soon', [
 // TODO(action_13): replace with the real contact form (ContactController, support_tickets).
 Route::view('/contact', 'pages.coming-soon', [
     'title' => 'Contact',
-    'message' => "Le formulaire de contact arrive très prochainement. En attendant, écrivez-nous à contact@zensms.example.",
+    'message' => "Le formulaire de contact arrive très prochainement. En attendant, écrivez-nous à support@zenphone.space.",
     'icon' => 'fa-envelope',
 ])->name('contact');
 

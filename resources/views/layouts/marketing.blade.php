@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>@yield('title', config('app.name', 'Zen_Sms') . ' — Numéros virtuels pour vos SMS de vérification')</title>
+        <title>@yield('title', config('app.name', 'Zenphone') . ' — Numéros virtuels pour vos SMS de vérification')</title>
         <meta name="description" content="@yield('meta_description', "Achetez des numéros virtuels pour recevoir vos codes SMS WhatsApp, Google, Instagram, TikTok, Telegram et plus, payés en Mobile Money.")">
 
         {{-- Set the dark class before first paint to avoid a flash of the wrong theme. --}}

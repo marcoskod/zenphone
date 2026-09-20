@@ -2,7 +2,7 @@
     <div>
         <h4 class="mb-1.5 text-xs font-bold uppercase tracking-wide text-primary">1. Objet</h4>
         <p class="text-sm leading-relaxed text-secondary/80 dark:text-light/80">
-            Zen_Sms fournit un accès à des numéros de téléphone virtuels temporaires, permettant de recevoir un code SMS
+            Zenphone fournit un accès à des numéros de téléphone virtuels temporaires, permettant de recevoir un code SMS
             de vérification pour un service tiers (WhatsApp, Google, Instagram, TikTok, Telegram, etc.). Le prix affiché
             en FCFA correspond au tarif du fournisseur, converti et majoré d'une marge de service.
         </p>
@@ -20,7 +20,7 @@
     <div>
         <h4 class="mb-1.5 text-xs font-bold uppercase tracking-wide text-primary">3. Politique de remboursement</h4>
         <p class="text-sm leading-relaxed text-secondary/80 dark:text-light/80">
-            Cette section décrit précisément le fonctionnement réel du remboursement sur Zen_Sms :
+            Cette section décrit précisément le fonctionnement réel du remboursement sur Zenphone :
         </p>
         <ul class="mt-2 list-disc space-y-2 pl-5 text-sm leading-relaxed text-secondary/80 dark:text-light/80">
             <li>
@@ -41,7 +41,7 @@
                 toute demande d'annulation pour ce numéro, et
                 <strong class="text-secondary dark:text-light">aucun remboursement n'est possible</strong> par ce
                 biais — y compris si le code ne fonctionne pas avec le service tiers pour une raison indépendante de
-                Zen_Sms (compte déjà vérifié, restriction du service tiers, etc.).
+                Zenphone (compte déjà vérifié, restriction du service tiers, etc.).
             </li>
             <li>
                 Il n'existe pas de remboursement partiel : chaque commande est remboursée intégralement ou pas du

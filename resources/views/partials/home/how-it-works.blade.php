@@ -59,7 +59,7 @@
 </section>
 
 <section class="mt-10 w-full max-w-lg" aria-labelledby="trust-title">
-    <h2 id="trust-title" class="text-center text-lg font-bold text-secondary dark:text-light">Pourquoi Zen_Sms&nbsp;?</h2>
+    <h2 id="trust-title" class="text-center text-lg font-bold text-secondary dark:text-light">Pourquoi Zenphone&nbsp;?</h2>
 
     <ul class="mt-5 grid grid-cols-2 gap-3">
         @foreach ($guarantees as $g)

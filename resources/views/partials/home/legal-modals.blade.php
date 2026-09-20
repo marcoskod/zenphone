@@ -19,7 +19,7 @@
     >
         <div class="flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900">
             <div class="relative shrink-0 bg-gradient-to-br from-secondary to-primary p-5">
-                <p class="text-[10px] font-semibold uppercase tracking-widest text-accent">Zen_Sms &rsaquo; {{ $label }}</p>
+                <p class="text-[10px] font-semibold uppercase tracking-widest text-accent">Zenphone &rsaquo; {{ $label }}</p>
                 <h3 class="mt-1 pr-8 text-lg font-bold text-white">{{ $label }}</h3>
                 <p class="mt-1 text-xs text-white/50">Dernière mise à jour : {{ now()->translatedFormat('F Y') }}</p>
                 <button
