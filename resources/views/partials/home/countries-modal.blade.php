@@ -2,9 +2,27 @@
 <div
     x-show="showCountriesModal"
     x-cloak
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
     class="fixed inset-0 z-50 flex items-center justify-center bg-secondary/60 p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Choisir un pays"
 >
-    <div class="flex max-h-[88vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900">
+    <div
+        x-show="showCountriesModal"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        class="flex max-h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900"
+    >
         <div class="relative shrink-0 bg-gradient-to-br from-secondary to-primary p-5">
             <p class="text-[10px] font-semibold uppercase tracking-widest text-accent">Zen_Sms &rsaquo; Couverture</p>
             <h3 class="mt-1 pr-8 text-base font-bold text-white">Tous les pays disponibles</h3>

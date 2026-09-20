@@ -11,8 +11,10 @@ class PricingService
     }
 
     /**
-     * Converts a 5sim USD price to the FCFA price shown to the customer, applying the
-     * configured exchange rate and margin.
+     * Converts a supplier USD price to the FCFA price shown to the customer, applying the
+     * configured exchange rate and margin. Rounded up to a whole franc: FCFA has no
+     * subunit and FedaPay expects integer XOF amounts, so a price like 172.8 would risk
+     * being rejected at checkout (and rounding up, never down, protects the margin).
      */
     public function calculatePrice(float $priceUsd): float
     {
@@ -20,12 +22,12 @@ class PricingService
 
         $withMargin = $fcfa * (1 + ($this->marginPercent() / 100));
 
-        return round($withMargin, 2);
+        return (float) ceil($withMargin);
     }
 
     /**
      * The admin-configurable margin (settings table) takes priority over
-     * FIVESIM_MARGIN_PERCENT from .env, so a change in the admin panel takes effect
+     * SMSPOOL_MARGIN_PERCENT from .env, so a change in the admin panel takes effect
      * immediately without a deploy. Falls back to the env-sourced config value if no
      * admin override has ever been saved.
      */

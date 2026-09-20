@@ -51,10 +51,10 @@ class DashboardController extends Controller
             'total_revenue' => $ordersRevenue + $topupsRevenue,
             'transaction_count' => $transactionCount,
             // Reconstructing the actual per-order margin would require the original
-            // 5sim USD cost stored alongside each order, which isn't captured today
+            // supplier USD cost stored alongside each order, which isn't captured today
             // (orders only stores price_fcfa, the already-marked-up customer price) -
             // so this reports the currently configured margin (admin setting if one
-            // exists, else FIVESIM_MARGIN_PERCENT) rather than a computed average.
+            // exists, else SMSPOOL_MARGIN_PERCENT) rather than a computed average.
             // Documented limitation, not a bug.
             'average_margin_percent' => $this->pricing->marginPercent(),
         ];
@@ -63,7 +63,7 @@ class DashboardController extends Controller
     /**
      * Revenue (orders + confirmed topups) and an approximated margin, grouped by day
      * over the last 30 days. The margin line is derived from that day's order revenue
-     * using the CURRENT margin percent (topups aren't a marked-up 5sim cost, so they're
+     * using the CURRENT margin percent (topups aren't a marked-up supplier cost, so they're
      * excluded from it) - like average_margin_percent above, this is an approximation
      * since historical per-order margin isn't stored, not a true day-by-day
      * reconstruction of what the margin actually was on that day.

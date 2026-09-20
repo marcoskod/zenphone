@@ -12,12 +12,12 @@
         ],
         'Paiement' => [
             [
-                'q' => 'Comment recharger mon solde ?',
-                'a' => 'Le rechargement se fait en Mobile Money (Orange Money, Wave, MTN MoMo, Moov Money) ou par carte bancaire via FedaPay, à partir de 500 FCFA.',
+                'q' => 'Comment payer ?',
+                'a' => 'Directement pour chaque numéro, sans recharge préalable : en Mobile Money (Orange Money, Wave, MTN MoMo, Moov Money) ou par carte bancaire, via FedaPay.',
             ],
             [
                 'q' => 'Le paiement est-il sécurisé ?',
-                'a' => "Oui. Tous les paiements sont traités par FedaPay et vérifiés côté serveur avant que votre solde ne soit crédité — nous ne stockons jamais vos identifiants bancaires ou Mobile Money.",
+                'a' => "Oui. Tous les paiements sont traités par FedaPay et vérifiés côté serveur avant la livraison de votre numéro — nous ne stockons jamais vos identifiants bancaires ou Mobile Money.",
             ],
         ],
         'Numéros / SMS' => [
@@ -33,7 +33,7 @@
         'Remboursement' => [
             [
                 'q' => "Que se passe-t-il si je ne reçois pas de SMS ?",
-                'a' => "Vous pouvez annuler la commande tant qu'aucun SMS n'est arrivé : le montant est alors automatiquement recrédité sur votre solde. Consultez nos CGV pour le détail complet de cette politique.",
+                'a' => "Si aucun SMS n'arrive avant l'expiration du numéro, la commande est automatiquement annulée et son montant recrédité sur votre compte (utilisé à votre prochain achat), même si vous avez fermé la page. Consultez nos CGV pour le détail.",
             ],
             [
                 'q' => 'Puis-je être remboursé après avoir reçu le code ?',

@@ -62,20 +62,45 @@
             class="w-full rounded-lg border-2 border-slate-200 py-2.5 pl-9 text-sm text-secondary focus:border-primary dark:border-slate-700 dark:bg-slate-800 dark:text-light"
         >
     </div>
-    <div class="grid grid-cols-3 gap-2">
+    {{-- Loading skeleton - shown the instant a country is picked, so the grid below
+         never flashes an empty "Aucun service trouvé" while the AJAX call is in flight. --}}
+    <div class="grid grid-cols-3 gap-2" x-show="loadingServices" x-cloak>
+        <template x-for="n in 9" :key="n">
+            <div class="flex min-h-[72px] animate-pulse flex-col items-center justify-center gap-2 rounded-lg border-2 border-slate-200 p-2.5 dark:border-slate-700">
+                <div class="h-5 w-5 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+                <div class="h-2 w-10 rounded bg-slate-200 dark:bg-slate-700"></div>
+            </div>
+        </template>
+    </div>
+
+    <div class="grid grid-cols-3 gap-2" x-show="!loadingServices" x-cloak>
         <template x-for="item in filteredServices" :key="item.code">
             <button
                 type="button"
                 @click="selectService(item.code)"
-                class="flex flex-col items-center gap-1 rounded-lg border-2 p-2.5 text-center transition"
+                class="flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-lg border-2 p-2.5 text-center transition"
                 :class="service === item.code ? 'border-primary bg-primary/10 text-primary' : 'border-slate-200 text-secondary hover:border-primary/40 dark:border-slate-700 dark:text-light'"
             >
                 <i :class="serviceIcon(item.code)" class="text-lg"></i>
-                <span class="truncate text-[11px] capitalize" x-text="item.label"></span>
+                <span class="w-full truncate text-[11px]" x-text="item.label"></span>
+                <span class="text-[10px] font-semibold text-accent" x-text="'dès ' + new Intl.NumberFormat('fr-FR').format(item.price_fcfa) + ' F'"></span>
             </button>
         </template>
     </div>
-    <p class="mt-3 text-center text-sm text-secondary/50" x-show="filteredServices.length === 0" x-cloak>Aucun service trouvé.</p>
+    <p class="mt-3 text-center text-sm text-secondary/50" x-show="!loadingServices && filteredServices.length === 0" x-cloak>Aucun service trouvé.</p>
+
+    {{-- Only the ~10 most requested services show by default; the rest of the 150+
+         catalog is one tap away instead of forcing everyone to scroll past it. --}}
+    <button
+        type="button"
+        x-show="!loadingServices && !serviceFilter && !showAllServices && services.length > popularServices.length"
+        x-cloak
+        @click="showAllServices = true"
+        class="mt-3 flex w-full items-center justify-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+    >
+        <span>Voir tous les services</span>
+        <span class="text-secondary/40 dark:text-light/40" x-text="'(' + services.length + ')'"></span>
+    </button>
 </div>
 
 {{-- Order summary --}}
@@ -90,7 +115,8 @@
     </div>
     <div class="mt-2 flex items-center justify-between border-t border-slate-200 pt-2 dark:border-slate-700">
         <span class="text-sm font-semibold text-secondary dark:text-light">Total</span>
-        <span class="text-xl font-bold text-accent" x-text="priceLabel"></span>
+        <span class="h-6 w-20 animate-pulse rounded bg-slate-200 dark:bg-slate-700" x-show="loadingPrice" x-cloak></span>
+        <span class="text-xl font-bold text-accent" x-show="!loadingPrice" x-text="priceLabel"></span>
     </div>
 </div>
 

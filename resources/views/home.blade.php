@@ -7,6 +7,18 @@
 
         <title>Zen_Sms — Numéros virtuels pour vos SMS de vérification</title>
         <meta name="description" content="Achetez un numéro virtuel et recevez votre code SMS en quelques secondes. Paiement en Mobile Money via FedaPay.">
+        <meta name="theme-color" content="#1F3569">
+        <link rel="canonical" href="{{ url('/') }}">
+        <link rel="icon" href="{{ asset('favicon.ico') }}">
+
+        {{-- Link previews (WhatsApp, Facebook, Telegram, X) - what people see when the ad or a shared link is posted. --}}
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="{{ config('app.name') }}">
+        <meta property="og:locale" content="fr_FR">
+        <meta property="og:url" content="{{ url('/') }}">
+        <meta property="og:title" content="Zen_Sms — Numéros virtuels pour vos SMS de vérification">
+        <meta property="og:description" content="Recevez vos codes SMS WhatsApp, Telegram, Google... sans carte SIM. Payez en Mobile Money.">
+        <meta name="twitter:card" content="summary">
 
         {{-- Set the dark class before first paint to avoid a flash of the wrong theme. --}}
         <script>
@@ -22,7 +34,7 @@
         <!-- Font Awesome (icons) -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
-        <!-- FedaPay checkout widget (client-side; server-side verification happens in TopupController) -->
+        <!-- FedaPay checkout widget (client-side; server-side verification happens in PurchaseController::payConfirm and the FedaPay webhook) -->
         <script src="https://cdn.fedapay.com/checkout.js?v=1.1.7"></script>
 
         <!-- Scripts -->
@@ -89,8 +101,8 @@
                                     </div>
                                     <div>
                                         <div class="font-semibold text-white" x-text="s.label"></div>
-                                        <div class="text-xs text-white/60">
-                                            à partir de <span x-text="s.priceFrom"></span> FCFA
+                                        <div class="text-xs text-white/60" x-show="s.priceFrom !== null">
+                                            à partir de <span x-text="new Intl.NumberFormat('fr-FR').format(s.priceFrom)"></span> FCFA
                                         </div>
                                     </div>
                                 </div>
@@ -111,7 +123,7 @@
                                 Plus de 150 pays disponibles
                             </p>
                             <div class="flex flex-wrap items-center gap-2">
-                                <template x-for="code in ['ivorycoast', 'senegal', 'ghana', 'usa']" :key="code">
+                                <template x-for="code in ['benin', 'senegal', 'ghana', 'nigeria']" :key="code">
                                     <span class="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-xs text-white/85">
                                         <span x-text="countryFlag(code)"></span>
                                         <span x-text="countries.find(c => c.code === code)?.name ?? code"></span>
@@ -160,7 +172,6 @@
         @include('partials.home.waiting-modal')
         @include('partials.home.success-modal')
         @include('partials.home.error-modal')
-        @include('partials.home.topup-modal')
         @include('partials.home.account-modal')
         @include('partials.home.legal-modals')
     </body>

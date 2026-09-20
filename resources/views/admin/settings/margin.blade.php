@@ -18,14 +18,14 @@
             <div class="max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <h3 class="text-base font-bold text-secondary dark:text-light">Marge globale</h3>
                 <p class="mt-1 text-xs text-secondary/60 dark:text-light/60">
-                    Appliquée à chaque prix 5sim converti en FCFA. Valeur actuelle :
+                    Appliquée à chaque prix fournisseur converti en FCFA. Valeur actuelle :
                     <strong class="text-secondary dark:text-light">{{ number_format($currentMargin, 1) }}%</strong>.
                 </p>
 
                 @if ((float) $currentMargin !== $envMargin)
                     <p class="mt-1 text-[11px] text-accent">
                         Une valeur différente de {{ number_format($envMargin, 1) }}% est définie dans .env
-                        (FIVESIM_MARGIN_PERCENT) mais est actuellement remplacée par ce réglage.
+                        (SMSPOOL_MARGIN_PERCENT) mais est actuellement remplacée par ce réglage.
                     </p>
                 @endif
 

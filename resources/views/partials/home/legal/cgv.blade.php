@@ -11,8 +11,9 @@
     <div>
         <h4 class="mb-1.5 text-xs font-bold uppercase tracking-wide text-primary">2. Paiement</h4>
         <p class="text-sm leading-relaxed text-secondary/80 dark:text-light/80">
-            Le solde de votre compte se recharge en Mobile Money ou par carte bancaire via FedaPay, notre partenaire de
-            paiement. Chaque achat de numéro débite votre solde du montant affiché au moment de la commande.
+            Chaque numéro se règle directement, au moment de la commande, en Mobile Money ou par carte bancaire via
+            FedaPay, notre partenaire de paiement, pour le montant exact affiché. Aucune recharge préalable n'est
+            nécessaire. Un éventuel crédit issu d'un remboursement est utilisé automatiquement à votre achat suivant.
         </p>
     </div>
 
@@ -23,11 +24,16 @@
         </p>
         <ul class="mt-2 list-disc space-y-2 pl-5 text-sm leading-relaxed text-secondary/80 dark:text-light/80">
             <li>
-                <strong class="text-secondary dark:text-light">Avant réception du SMS :</strong> si aucun code n'est
-                encore arrivé — que ce soit avant l'expiration du numéro (5 à 20 minutes selon le service) ou après —
-                vous pouvez annuler la commande depuis l'écran d'attente. L'annulation est transmise à notre
-                fournisseur ; si celui-ci la confirme, le montant exact de la commande est immédiatement recrédité sur
-                votre solde.
+                <strong class="text-secondary dark:text-light">Avant réception du SMS :</strong> si aucun code
+                n'arrive avant l'expiration du numéro (5 à 20 minutes selon le service), la commande est
+                automatiquement annulée et son montant exact recrédité sur votre compte, même si vous avez quitté la
+                page. Vous pouvez aussi l'annuler vous-même depuis l'écran d'attente. Le crédit est utilisé
+                automatiquement lors de votre prochain achat.
+            </li>
+            <li>
+                <strong class="text-secondary dark:text-light">Paiement encaissé mais numéro indisponible :</strong>
+                si le numéro n'a pas pu être réservé après votre paiement, le montant payé est immédiatement crédité sur
+                votre compte.
             </li>
             <li>
                 <strong class="text-secondary dark:text-light">Après réception du SMS :</strong> dès qu'un code de

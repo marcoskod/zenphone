@@ -88,6 +88,12 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'balance' => (float) $user->balance,
             ],
+            // session()->regenerate() above rotates the CSRF token, which would
+            // otherwise leave the page's <meta name="csrf-token"> stale and make every
+            // subsequent fetch() in this same page load (e.g. the purchase that
+            // triggered this inline auth) fail with a 419. The client updates its meta
+            // tag from this value instead of reloading the page.
+            'csrf_token' => csrf_token(),
         ]);
     }
 }

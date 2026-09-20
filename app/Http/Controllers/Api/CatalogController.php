@@ -2,84 +2,62 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Exceptions\FiveSimException;
+use App\Exceptions\SmsProviderException;
 use App\Http\Controllers\Controller;
-use App\Services\FiveSim\Contracts\FiveSimServiceInterface;
 use App\Services\PricingService;
+use App\Services\SmsProvider\Contracts\SmsProviderInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CatalogController extends Controller
 {
     public function __construct(
-        protected FiveSimServiceInterface $fiveSim,
+        protected SmsProviderInterface $sms,
         protected PricingService $pricing,
     ) {
     }
 
     /**
-     * GET /api/services?country=&operator= - formatted product list for a country,
-     * consumed by the service-selector component.
+     * GET /api/services?country= - services orderable in a country, consumed by the
+     * service-selector component.
      */
     public function services(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'country' => ['required', 'string'],
-            'operator' => ['nullable', 'string'],
         ]);
 
         try {
-            $products = $this->fiveSim->getProducts($validated['country'], $validated['operator'] ?? 'any');
-        } catch (FiveSimException $e) {
+            $services = $this->sms->getServices($validated['country']);
+        } catch (SmsProviderException $e) {
             return response()->json(['message' => $e->getMessage()], 502);
         }
 
-        $services = collect($products)
-            ->map(function ($details, $code) {
-                return [
-                    'code' => $code,
-                    'label' => ucfirst(str_replace('_', ' ', $code)),
-                    'category' => is_array($details) ? ($details['Category'] ?? null) : null,
-                    'qty' => is_array($details) ? ($details['Qty'] ?? 0) : 0,
-                    'price_usd' => is_array($details) ? ($details['Price'] ?? null) : null,
-                ];
-            })
-            ->values();
+        $services = array_map(fn (array $service) => $service + [
+            'price_fcfa' => $this->pricing->calculatePrice($service['price_usd']),
+        ], $services);
 
         return response()->json(['data' => $services]);
     }
 
     /**
-     * GET /api/countries - formatted country list, consumed by the country-selector
-     * component. Prefers the verified "text_en" field per entry (see
-     * FiveSimService::getCountries()'s code comment) and falls back to titleizing the
-     * slug itself if it's ever missing.
+     * GET /api/countries - country list for the country-selector component. `iso` lets
+     * the frontend render flags without a hand-maintained lookup table.
      */
     public function countries(): JsonResponse
     {
         try {
-            $countries = $this->fiveSim->getCountries();
-        } catch (FiveSimException $e) {
+            $countries = $this->sms->getCountries();
+        } catch (SmsProviderException $e) {
             return response()->json(['message' => $e->getMessage()], 502);
         }
 
-        $formatted = collect($countries)
-            ->map(function ($details, $code) {
-                $name = is_array($details) ? ($details['text_en'] ?? $details['name'] ?? null) : null;
-
-                return [
-                    'code' => $code,
-                    'name' => $name ?? ucfirst(str_replace('_', ' ', $code)),
-                ];
-            })
-            ->values();
-
-        return response()->json(['data' => $formatted]);
+        return response()->json(['data' => $countries]);
     }
 
     /**
-     * GET /api/price?service=&country= - live FCFA price (5sim USD price converted via
-     * PricingService), called from Alpine on every service/country change.
+     * GET /api/price?service=&country= - live FCFA price (supplier USD price converted
+     * via PricingService), called from Alpine on every service/country change.
      */
     public function price(Request $request): JsonResponse
     {
@@ -89,18 +67,14 @@ class CatalogController extends Controller
         ]);
 
         try {
-            $products = $this->fiveSim->getProducts($validated['country'], 'any');
-        } catch (FiveSimException $e) {
+            $priceUsd = $this->sms->getPrice($validated['country'], $validated['service']);
+        } catch (SmsProviderException $e) {
             return response()->json(['message' => $e->getMessage()], 502);
         }
 
-        $product = $products[$validated['service']] ?? null;
-
-        if (! is_array($product) || ! isset($product['Price'])) {
+        if ($priceUsd === null) {
             return response()->json(['message' => "Ce service n'est pas disponible pour ce pays."], 404);
         }
-
-        $priceUsd = (float) $product['Price'];
 
         return response()->json([
             'service' => $validated['service'],

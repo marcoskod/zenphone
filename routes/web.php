@@ -3,8 +3,8 @@
 use App\Http\Controllers\Api\AuthController as ApiAuthController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\FedaPayWebhookController;
 use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\Api\TopupController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\ProfileController;
@@ -59,7 +59,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -95,17 +95,25 @@ Route::prefix('api')->name('api.')->group(function () {
     Route::get('/countries', [CatalogController::class, 'countries'])->name('countries');
     Route::get('/price', [CatalogController::class, 'price'])->name('price');
     Route::get('/me', [ApiAuthController::class, 'me'])->name('me');
-    Route::post('/auth/quick', [ApiAuthController::class, 'quick'])->name('auth.quick');
-    Route::post('/contact', [ContactController::class, 'store'])->name('contact');
+    Route::post('/auth/quick', [ApiAuthController::class, 'quick'])->middleware('throttle:quick-auth')->name('auth.quick');
+    Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:contact')->name('contact');
 
-    Route::middleware('auth')->group(function () {
+    Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/orders/{order}/status', [PurchaseController::class, 'status'])->name('orders.status');
-        Route::post('/purchase', [PurchaseController::class, 'storeJson'])->name('purchase.json');
+        Route::middleware('throttle:purchase')->group(function () {
+            Route::post('/purchase', [PurchaseController::class, 'storeJson'])->name('purchase.json');
+            Route::post('/purchase/pay-init', [PurchaseController::class, 'payInit'])->name('purchase.pay-init');
+            Route::post('/purchase/pay-confirm', [PurchaseController::class, 'payConfirm'])->name('purchase.pay-confirm');
+        });
         Route::get('/dashboard', [DashboardController::class, 'json'])->name('dashboard.json');
-        Route::post('/topup/confirm', [TopupController::class, 'confirm'])->name('topup.confirm');
         Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     });
 });
+
+// Server-to-server: called by FedaPay, not by a browser (CSRF-exempt, see bootstrap/app.php).
+Route::post('/webhooks/fedapay', [FedaPayWebhookController::class, 'handle'])
+    ->middleware('throttle:webhooks')
+    ->name('webhooks.fedapay');
 
 require __DIR__.'/auth.php';
 require __DIR__.'/admin.php';

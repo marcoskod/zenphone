@@ -20,7 +20,7 @@ class OrderFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'fivesim_order_id' => fake()->unique()->numberBetween(100000, 999999),
+            'provider_order_id' => (string) fake()->unique()->numberBetween(100000, 999999),
             'service' => fake()->randomElement(['whatsapp', 'google', 'instagram', 'telegram']),
             'country' => fake()->randomElement(['russia', 'usa', 'ivory_coast', 'senegal']),
             'phone' => '+' . fake()->numerify('###########'),

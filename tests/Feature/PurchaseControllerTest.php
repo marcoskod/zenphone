@@ -9,22 +9,19 @@ use App\Services\PricingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
+use Tests\Concerns\FakesSmsPool;
 use Tests\TestCase;
 
 class PurchaseControllerTest extends TestCase
 {
+    use FakesSmsPool;
     use RefreshDatabase;
 
-    public function test_insufficient_balance_is_rejected_without_calling_the_5sim_purchase_endpoint(): void
+    public function test_insufficient_balance_is_rejected_without_calling_the_supplier_purchase_endpoint(): void
     {
-        Http::fake([
-            '*/guest/products/*' => Http::response([
-                'whatsapp' => ['Category' => 'activation', 'Qty' => 50, 'Price' => 100.0],
-            ], 200),
-            '*/user/buy/activation/*' => Http::response([
-                'id' => 1, 'phone' => '+79000000000', 'status' => 'PENDING',
-            ], 200),
-        ]);
+        Http::fake($this->smsPoolStubs([
+            '*/request/pricing' => $this->smsPoolPricing(100.0),
+        ]));
 
         $user = User::factory()->create(['balance' => 10]);
 
@@ -37,26 +34,14 @@ class PurchaseControllerTest extends TestCase
         $this->assertSame(10.0, (float) $user->fresh()->balance);
         $this->assertDatabaseCount('orders', 0);
 
-        Http::assertNotSent(fn ($request) => str_contains($request->url(), '/user/buy/activation'));
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), '/purchase/sms'));
     }
 
     public function test_successful_purchase_creates_order_and_deducts_balance(): void
     {
-        Http::fake([
-            '*/guest/products/*' => Http::response([
-                'whatsapp' => ['Category' => 'activation', 'Qty' => 50, 'Price' => 1.0],
-            ], 200),
-            '*/user/buy/activation/*' => Http::response([
-                'id' => 123456,
-                'phone' => '+79001234567',
-                'operator' => 'any',
-                'product' => 'whatsapp',
-                'price' => 1.0,
-                'status' => 'PENDING',
-                'expires' => now()->addMinutes(15)->toIso8601String(),
-                'country' => 'russia',
-            ], 200),
-        ]);
+        Http::fake($this->smsPoolStubs([
+            '*/request/pricing' => $this->smsPoolPricing(1.0),
+        ]));
 
         $user = User::factory()->create(['balance' => 100000]);
 
@@ -71,8 +56,8 @@ class PurchaseControllerTest extends TestCase
 
         $response->assertRedirect(route('purchase.waiting', $order));
         $this->assertSame($user->id, $order->user_id);
-        $this->assertSame(123456, $order->fivesim_order_id);
-        $this->assertSame('+79001234567', $order->phone);
+        $this->assertSame('ABC12345', $order->provider_order_id);
+        $this->assertSame('+22961234567', $order->phone);
         $this->assertSame('pending', $order->status);
         $this->assertNull($order->sms_code);
 
@@ -82,14 +67,11 @@ class PurchaseControllerTest extends TestCase
         $this->assertEquals(100000 - $expectedPriceFcfa, (float) $user->fresh()->balance);
     }
 
-    public function test_failed_5sim_purchase_leaves_balance_untouched_and_creates_no_order(): void
+    public function test_failed_supplier_purchase_leaves_balance_untouched_and_creates_no_order(): void
     {
-        Http::fake([
-            '*/guest/products/*' => Http::response([
-                'whatsapp' => ['Category' => 'activation', 'Qty' => 50, 'Price' => 1.0],
-            ], 200),
-            '*/user/buy/activation/*' => Http::response(['error' => 'no product'], 400),
-        ]);
+        Http::fake($this->smsPoolStubs([
+            '*/purchase/sms' => $this->smsPoolOutOfStock(),
+        ]));
 
         $user = User::factory()->create(['balance' => 100000]);
 
@@ -115,11 +97,12 @@ class PurchaseControllerTest extends TestCase
 
     public function test_unavailable_service_for_country_is_rejected(): void
     {
-        Http::fake([
-            '*/guest/products/*' => Http::response([
-                'google' => ['Category' => 'activation', 'Qty' => 10, 'Price' => 1.0],
+        // Only Telegram (907) is priced for this country; WhatsApp is not offered.
+        Http::fake($this->smsPoolStubs([
+            '*/request/pricing' => Http::response([
+                ['service' => 907, 'service_name' => 'Telegram', 'country' => 97, 'country_name' => 'Benin', 'short_name' => 'BJ', 'pool' => 3, 'price' => '1.00'],
             ], 200),
-        ]);
+        ]));
 
         $user = User::factory()->create(['balance' => 100000]);
 
@@ -155,22 +138,15 @@ class PurchaseControllerTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_status_endpoint_syncs_the_order_status_and_sms_code_from_5sim(): void
+    public function test_status_endpoint_syncs_the_order_status_and_sms_code_from_the_supplier(): void
     {
-        Http::fake([
-            '*/user/check/*' => Http::response([
-                'id' => 123456,
-                'status' => 'RECEIVED',
-                'phone' => '+79001234567',
-                'sms' => [
-                    ['sender' => 'WhatsApp', 'text' => 'Your code: 654321', 'code' => '654321'],
-                ],
-            ], 200),
-        ]);
+        Http::fake($this->smsPoolStubs([
+            '*/sms/check' => $this->smsPoolCheck(3, '654321'),
+        ]));
 
         $user = User::factory()->create();
         $order = Order::factory()->for($user)->create([
-            'fivesim_order_id' => 123456,
+            'provider_order_id' => 'ABC12345',
             'status' => 'pending',
             'sms_code' => null,
         ]);
@@ -187,17 +163,13 @@ class PurchaseControllerTest extends TestCase
 
     public function test_status_endpoint_does_not_clobber_an_already_received_sms_code(): void
     {
-        Http::fake([
-            '*/user/check/*' => Http::response([
-                'id' => 123456,
-                'status' => 'RECEIVED',
-                'sms' => [],
-            ], 200),
-        ]);
+        Http::fake($this->smsPoolStubs([
+            '*/sms/check' => $this->smsPoolCheck(3),
+        ]));
 
         $user = User::factory()->create();
         $order = Order::factory()->for($user)->create([
-            'fivesim_order_id' => 123456,
+            'provider_order_id' => 'ABC12345',
             'status' => 'received',
             'sms_code' => '111111',
         ]);
@@ -211,19 +183,13 @@ class PurchaseControllerTest extends TestCase
     {
         Notification::fake();
 
-        Http::fake([
-            '*/user/check/*' => Http::response([
-                'id' => 123456,
-                'status' => 'RECEIVED',
-                'sms' => [
-                    ['sender' => 'WhatsApp', 'text' => 'Your code: 654321', 'code' => '654321'],
-                ],
-            ], 200),
-        ]);
+        Http::fake($this->smsPoolStubs([
+            '*/sms/check' => $this->smsPoolCheck(3, '654321'),
+        ]));
 
         $user = User::factory()->create();
         $order = Order::factory()->for($user)->create([
-            'fivesim_order_id' => 123456,
+            'provider_order_id' => 'ABC12345',
             'status' => 'pending',
             'sms_code' => null,
         ]);
@@ -242,19 +208,13 @@ class PurchaseControllerTest extends TestCase
     {
         Notification::fake();
 
-        Http::fake([
-            '*/user/check/*' => Http::response([
-                'id' => 123456,
-                'status' => 'RECEIVED',
-                'sms' => [
-                    ['sender' => 'WhatsApp', 'text' => 'Your code: 654321', 'code' => '654321'],
-                ],
-            ], 200),
-        ]);
+        Http::fake($this->smsPoolStubs([
+            '*/sms/check' => $this->smsPoolCheck(3, '654321'),
+        ]));
 
         $user = User::factory()->create();
         $order = Order::factory()->for($user)->create([
-            'fivesim_order_id' => 123456,
+            'provider_order_id' => 'ABC12345',
             'status' => 'pending',
             'sms_code' => null,
         ]);
@@ -271,17 +231,13 @@ class PurchaseControllerTest extends TestCase
     {
         Notification::fake();
 
-        Http::fake([
-            '*/user/check/*' => Http::response([
-                'id' => 123456,
-                'status' => 'PENDING',
-                'sms' => [],
-            ], 200),
-        ]);
+        Http::fake($this->smsPoolStubs([
+            '*/sms/check' => $this->smsPoolCheck(1),
+        ]));
 
         $user = User::factory()->create();
         $order = Order::factory()->for($user)->create([
-            'fivesim_order_id' => 123456,
+            'provider_order_id' => 'ABC12345',
             'status' => 'pending',
             'sms_code' => null,
         ]);
@@ -294,7 +250,7 @@ class PurchaseControllerTest extends TestCase
     public function test_status_endpoint_is_forbidden_for_another_users_order(): void
     {
         $owner = User::factory()->create();
-        $order = Order::factory()->for($owner)->create(['fivesim_order_id' => 123456]);
+        $order = Order::factory()->for($owner)->create(['provider_order_id' => 'ABC12345']);
 
         $intruder = User::factory()->create();
 
@@ -303,14 +259,14 @@ class PurchaseControllerTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_status_endpoint_returns_502_when_5sim_errors(): void
+    public function test_status_endpoint_returns_502_when_the_supplier_errors(): void
     {
-        Http::fake([
-            '*/user/check/*' => Http::response('order not found', 404),
-        ]);
+        Http::fake($this->smsPoolStubs([
+            '*/sms/check' => Http::response('order not found', 404),
+        ]));
 
         $user = User::factory()->create();
-        $order = Order::factory()->for($user)->create(['fivesim_order_id' => 123456, 'status' => 'pending']);
+        $order = Order::factory()->for($user)->create(['provider_order_id' => 'ABC12345', 'status' => 'pending']);
 
         $response = $this->actingAs($user)->getJson(route('api.orders.status', $order));
 
@@ -320,13 +276,11 @@ class PurchaseControllerTest extends TestCase
 
     public function test_cancel_refunds_balance_and_marks_order_cancelled(): void
     {
-        Http::fake([
-            '*/user/cancel/*' => Http::response(['id' => 123456, 'status' => 'CANCELED'], 200),
-        ]);
+        Http::fake($this->smsPoolStubs());
 
         $user = User::factory()->create(['balance' => 1000]);
         $order = Order::factory()->for($user)->create([
-            'fivesim_order_id' => 123456,
+            'provider_order_id' => 'ABC12345',
             'status' => 'pending',
             'price_fcfa' => 420,
         ]);
@@ -340,35 +294,38 @@ class PurchaseControllerTest extends TestCase
         $this->assertEquals(1420.0, (float) $user->fresh()->balance);
     }
 
-    public function test_cancel_does_not_refund_when_5sim_does_not_confirm_cancellation(): void
+    public function test_cancel_does_not_refund_when_the_supplier_refuses_to_cancel_an_active_order(): void
     {
-        Http::fake([
-            '*/user/cancel/*' => Http::response(['id' => 123456, 'status' => 'PENDING'], 200),
-        ]);
+        // Cancellation refused, and the order is still live (pending, no SMS) on the supplier side.
+        Http::fake($this->smsPoolStubs([
+            '*/sms/cancel' => $this->smsPoolCancelRefused(),
+            '*/sms/check' => $this->smsPoolCheck(1),
+        ]));
 
         $user = User::factory()->create(['balance' => 1000]);
         $order = Order::factory()->for($user)->create([
-            'fivesim_order_id' => 123456,
+            'provider_order_id' => 'ABC12345',
             'status' => 'pending',
             'price_fcfa' => 420,
         ]);
 
         $response = $this->actingAs($user)->postJson(route('purchase.cancel', $order));
 
-        $response->assertStatus(422);
+        $response->assertStatus(502);
         $this->assertSame('pending', $order->refresh()->status);
         $this->assertEquals(1000.0, (float) $user->fresh()->balance);
     }
 
-    public function test_cancel_does_not_refund_when_5sim_rejects_the_cancellation(): void
+    public function test_cancel_does_not_refund_when_the_supplier_rejects_the_cancellation(): void
     {
-        Http::fake([
-            '*/user/cancel/*' => Http::response('order has sms', 400),
-        ]);
+        Http::fake($this->smsPoolStubs([
+            '*/sms/cancel' => $this->smsPoolCancelRefused(),
+            '*/sms/check' => $this->smsPoolCheck(3, '123456'),
+        ]));
 
         $user = User::factory()->create(['balance' => 1000]);
         $order = Order::factory()->for($user)->create([
-            'fivesim_order_id' => 123456,
+            'provider_order_id' => 'ABC12345',
             'status' => 'received',
             'price_fcfa' => 420,
         ]);
@@ -383,7 +340,7 @@ class PurchaseControllerTest extends TestCase
     public function test_cancel_is_forbidden_for_another_users_order(): void
     {
         $owner = User::factory()->create();
-        $order = Order::factory()->for($owner)->create(['fivesim_order_id' => 123456]);
+        $order = Order::factory()->for($owner)->create(['provider_order_id' => 'ABC12345']);
 
         $intruder = User::factory()->create();
 

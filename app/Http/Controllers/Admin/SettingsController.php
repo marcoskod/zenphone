@@ -15,13 +15,13 @@ class SettingsController extends Controller
     {
         return view('admin.settings.margin', [
             'currentMargin' => $pricing->marginPercent(),
-            'envMargin' => (float) config('fivesim.margin_percent'),
+            'envMargin' => (float) config('smspool.margin_percent'),
         ]);
     }
 
     /**
      * Saved to the settings table, which PricingService::marginPercent() now checks
-     * before falling back to FIVESIM_MARGIN_PERCENT - so this takes effect on the very
+     * before falling back to SMSPOOL_MARGIN_PERCENT - so this takes effect on the very
      * next price lookup, no deploy needed. Global only for now (per-country/service
      * overrides would need a keying scheme this simple key/value table doesn't have yet).
      */

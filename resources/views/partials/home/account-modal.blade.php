@@ -1,9 +1,27 @@
 <div
     x-show="showAccountModal"
     x-cloak
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
     class="fixed inset-0 z-50 flex items-center justify-center bg-secondary/60 p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Mon compte"
 >
-    <div class="flex max-h-[88vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900">
+    <div
+        x-show="showAccountModal"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        class="flex max-h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900"
+    >
         <div class="relative shrink-0 bg-gradient-to-br from-secondary to-primary p-5">
             <p class="text-[10px] font-semibold uppercase tracking-widest text-accent">Zen_Sms &rsaquo; Mon compte</p>
             <h3 class="mt-1 pr-8 text-base font-bold text-white" x-text="user?.email"></h3>
@@ -27,18 +45,13 @@
             <template x-if="!dashboardLoading && dashboard">
                 <div class="space-y-4">
                     <div class="rounded-xl border border-slate-200 bg-light p-4 dark:border-slate-700 dark:bg-secondary/40">
-                        <p class="text-xs text-secondary/60 dark:text-light/60">Solde disponible</p>
+                        <p class="text-xs text-secondary/60 dark:text-light/60">Crédit disponible</p>
                         <p class="mt-1 text-2xl font-bold text-secondary dark:text-light">
                             <span x-text="new Intl.NumberFormat('fr-FR').format(dashboard.stats.balance)"></span> FCFA
                         </p>
-                        <button
-                            @click="showAccountModal = false; openTopup()"
-                            type="button"
-                            class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-accent px-3.5 py-1.5 text-xs font-semibold text-white"
-                        >
-                            <i class="fa-solid fa-wallet"></i>
-                            Recharger
-                        </button>
+                        <p class="mt-1 text-[11px] text-secondary/50 dark:text-light/50" x-show="dashboard.stats.balance > 0">
+                            Issu de remboursements — utilisé automatiquement à votre prochain achat.
+                        </p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2.5">

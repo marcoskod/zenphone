@@ -5,7 +5,7 @@ namespace App\Exceptions;
 use Exception;
 use Throwable;
 
-class FiveSimException extends Exception
+class SmsProviderException extends Exception
 {
     public function __construct(string $message, protected int $statusCode = 0, ?Throwable $previous = null)
     {

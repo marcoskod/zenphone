@@ -35,23 +35,23 @@ class PricingServiceTest extends TestCase
         $this->assertSame(1500.0, $service->calculatePrice(2.5));
     }
 
-    public function test_calculate_price_rounds_to_two_decimals(): void
+    public function test_calculate_price_rounds_up_to_a_whole_franc(): void
     {
         $service = new PricingService([
             'exchange_rate_usd_fcfa' => 601.5,
             'margin_percent' => 15,
         ]);
 
-        $expected = round(2.5 * 601.5 * 1.15, 2);
+        $expected = (float) ceil(2.5 * 601.5 * 1.15);
 
         $this->assertSame($expected, $service->calculatePrice(2.5));
     }
 
-    public function test_pricing_service_resolves_from_the_container_using_fivesim_config(): void
+    public function test_pricing_service_resolves_from_the_container_using_smspool_config(): void
     {
         config([
-            'fivesim.exchange_rate_usd_fcfa' => 600,
-            'fivesim.margin_percent' => 20,
+            'smspool.exchange_rate_usd_fcfa' => 600,
+            'smspool.margin_percent' => 20,
         ]);
 
         $service = app(PricingService::class);
