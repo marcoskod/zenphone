@@ -23,7 +23,9 @@ class LandingPageTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Acheter maintenant');
-        $response->assertSee('Voir tous les pays');
+        $response->assertSee('150+ pays');
+        $response->assertSee('showCountriesModal = true', false);
+        $response->assertSee('flagcdn.com/w80/bj.png', false);
         $response->assertSee('CGV');
         $response->assertSee('Mentions légales');
     }
