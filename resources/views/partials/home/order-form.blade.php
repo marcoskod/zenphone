@@ -78,10 +78,12 @@
             <button
                 type="button"
                 @click="selectService(item.code)"
-                class="flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-lg border-2 p-2.5 text-center transition"
+                class="flex min-h-[88px] flex-col items-center justify-center gap-1 rounded-lg border-2 p-2.5 text-center transition"
                 :class="service === item.code ? 'border-primary bg-primary/10 text-primary' : 'border-slate-200 text-secondary hover:border-primary/40 dark:border-slate-700 dark:text-light'"
             >
-                <i :class="serviceIcon(item.code)" class="text-lg"></i>
+                <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base shadow-sm" :style="serviceTileStyle(item.code)">
+                    <i :class="serviceIcon(item.code)"></i>
+                </span>
                 <span class="w-full truncate text-[11px]" x-text="item.label"></span>
                 <span class="text-[10px] font-semibold text-accent" x-text="'dès ' + new Intl.NumberFormat('fr-FR').format(item.price_fcfa) + ' F'"></span>
             </button>
@@ -173,5 +175,5 @@
 <div class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] text-secondary/50 dark:text-light/50">
     <span><i class="fa-solid fa-check text-success"></i> Paiement sécurisé</span>
     <span><i class="fa-solid fa-check text-success"></i> Réception instantanée</span>
-    <span><i class="fa-solid fa-check text-success"></i> Support réactif</span>
+    <span><i class="fa-solid fa-check text-success"></i> Remboursé si aucun SMS</span>
 </div>

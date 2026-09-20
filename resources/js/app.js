@@ -26,7 +26,7 @@ const SERVICE_ICONS = {
     uber: 'fa-brands fa-uber',
     twitch: 'fa-brands fa-twitch',
     steam: 'fa-brands fa-steam',
-    tinder: 'fa-solid fa-heart',
+    tinder: 'fa-brands fa-tinder',
     line: 'fa-brands fa-line',
     viber: 'fa-brands fa-viber',
     skype: 'fa-brands fa-skype',
@@ -34,6 +34,38 @@ const SERVICE_ICONS = {
     reddit: 'fa-brands fa-reddit',
     pinterest: 'fa-brands fa-pinterest',
     ebay: 'fa-brands fa-ebay',
+};
+
+// Brand colours, so a service reads as its real logo (coloured app-icon tile + glyph)
+// instead of a row of identical grey icons. Anything unlisted gets a neutral tile.
+const SERVICE_BRANDS = {
+    whatsapp: { bg: '#25D366', fg: '#ffffff' },
+    telegram: { bg: '#229ED9', fg: '#ffffff' },
+    google: { bg: '#ffffff', fg: '#4285F4', ring: true },
+    instagram: { bg: 'linear-gradient(45deg,#F9A825,#E1306C 55%,#833AB4)', fg: '#ffffff' },
+    facebook: { bg: '#1877F2', fg: '#ffffff' },
+    tiktok: { bg: '#000000', fg: '#ffffff' },
+    twitter: { bg: '#000000', fg: '#ffffff' },
+    snapchat: { bg: '#FFFC00', fg: '#000000' },
+    discord: { bg: '#5865F2', fg: '#ffffff' },
+    openai: { bg: '#10A37F', fg: '#ffffff' },
+    amazon: { bg: '#FF9900', fg: '#111111' },
+    tinder: { bg: 'linear-gradient(45deg,#FD267A,#FF6036)', fg: '#ffffff' },
+    paypal: { bg: '#003087', fg: '#ffffff' },
+    linkedin: { bg: '#0A66C2', fg: '#ffffff' },
+    microsoft: { bg: '#ffffff', fg: '#00A4EF', ring: true },
+    apple: { bg: '#000000', fg: '#ffffff' },
+    uber: { bg: '#000000', fg: '#ffffff' },
+    viber: { bg: '#7360F2', fg: '#ffffff' },
+    twitch: { bg: '#9146FF', fg: '#ffffff' },
+    reddit: { bg: '#FF4500', fg: '#ffffff' },
+    pinterest: { bg: '#E60023', fg: '#ffffff' },
+    steam: { bg: '#171A21', fg: '#ffffff' },
+    line: { bg: '#06C755', fg: '#ffffff' },
+    wechat: { bg: '#07C160', fg: '#ffffff' },
+    skype: { bg: '#00AFF0', fg: '#ffffff' },
+    airbnb: { bg: '#FF5A5F', fg: '#ffffff' },
+    ebay: { bg: '#ffffff', fg: '#E53238', ring: true },
 };
 
 // The order customers reach for first - shown by default instead of the full 150+
@@ -57,6 +89,17 @@ function isoFlag(iso) {
 
 function serviceIcon(code) {
     return SERVICE_ICONS[code] ?? 'fa-solid fa-mobile-screen';
+}
+
+// Inline style for the logo tile (colours can't be Tailwind classes: the JS is not scanned).
+function serviceTileStyle(code) {
+    const brand = SERVICE_BRANDS[code];
+
+    if (!brand) {
+        return 'background:#E2E8F0;color:#334155';
+    }
+
+    return `background:${brand.bg};color:${brand.fg}` + (brand.ring ? ';box-shadow:inset 0 0 0 1px #E2E8F0' : '');
 }
 
 // Tracks the one order currently being waited on, so a reload/relaunch (page refresh,
@@ -444,12 +487,16 @@ Alpine.data('orderWaiting', (orderId, expiresAtIso, initialStatus = 'pending', i
    than duplicating catalog/order AJAX logic.
 ══════════════════════════════════════════════════════════════════════════ */
 
+// Shown two at a time, so keep an even number.
 const SHOWCASE_SERVICES = [
-    { code: 'whatsapp', label: 'WhatsApp', icon: 'fa-brands fa-whatsapp', priceFrom: null },
-    { code: 'google', label: 'Google', icon: 'fa-brands fa-google', priceFrom: null },
-    { code: 'instagram', label: 'Instagram', icon: 'fa-brands fa-instagram', priceFrom: null },
-    { code: 'tiktok', label: 'TikTok', icon: 'fa-brands fa-tiktok', priceFrom: null },
-    { code: 'telegram', label: 'Telegram', icon: 'fa-brands fa-telegram', priceFrom: null },
+    { code: 'whatsapp', label: 'WhatsApp', priceFrom: null },
+    { code: 'telegram', label: 'Telegram', priceFrom: null },
+    { code: 'google', label: 'Google', priceFrom: null },
+    { code: 'instagram', label: 'Instagram', priceFrom: null },
+    { code: 'facebook', label: 'Facebook', priceFrom: null },
+    { code: 'tiktok', label: 'TikTok', priceFrom: null },
+    { code: 'snapchat', label: 'Snapchat', priceFrom: null },
+    { code: 'discord', label: 'Discord', priceFrom: null },
 ];
 
 // The marketing carousel quotes real prices (Benin, the home market) instead of hard-coded
@@ -525,6 +572,16 @@ Alpine.data('zenSinglePage', () => ({
         return this.countries.filter((item) => item.name.toLowerCase().includes(term));
     },
 
+    get showcasePairs() {
+        const pairs = [];
+
+        for (let i = 0; i < this.showcaseServices.length; i += 2) {
+            pairs.push(this.showcaseServices.slice(i, i + 2));
+        }
+
+        return pairs;
+    },
+
     get popularServices() {
         return POPULAR_SERVICES
             .map((code) => this.services.find((item) => item.code === code))
@@ -572,6 +629,7 @@ Alpine.data('zenSinglePage', () => ({
     },
 
     serviceIcon,
+    serviceTileStyle,
     countryFlag(code) {
         return isoFlag(this.countries.find((c) => c.code === code)?.iso);
     },
@@ -1049,7 +1107,7 @@ Alpine.data('zenSinglePage', () => ({
         this.loadAuthStatus().then(() => this.resumeActiveOrderIfAny());
 
         setInterval(() => {
-            this.showcaseIndex = (this.showcaseIndex + 1) % this.showcaseServices.length;
+            this.showcaseIndex = (this.showcaseIndex + 1) % this.showcasePairs.length;
         }, 3000);
     },
 }));

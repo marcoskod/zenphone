@@ -11,7 +11,10 @@ class LandingPageTest extends TestCase
         $response = $this->get('/');
 
         $response->assertStatus(200);
-        $response->assertSee('Recevez vos codes SMS');
+        $response->assertSee('numéro étranger');
+        $response->assertSee('Comment ça marche', false);
+        $response->assertSee('Questions fréquentes');
+        $response->assertSee('FAQPage', false);
     }
 
     public function test_home_page_includes_the_order_form_and_modal_triggers(): void
